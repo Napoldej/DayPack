@@ -65,6 +65,8 @@ struct WalkOutChecklistView: View {
         .onAppear {
             if viewModel == nil {
                 viewModel = TodayViewModel(service: service)
+            } else {
+                viewModel?.refresh()
             }
         }
     }

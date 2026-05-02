@@ -10,6 +10,7 @@ final class MockLoadoutService: LoadoutService {
     private(set) var entries: [ChecklistEntry]
 
     private let stats: [DayStat]
+    private var todayLoadoutID: UUID?
 
     init() {
         let notebook    = Item(name: "Notebook",     symbol: "book.closed.fill",  tint: .green,  tag: "Always")
@@ -57,6 +58,7 @@ final class MockLoadoutService: LoadoutService {
 
         self.items = allItems
         self.loadouts = [schoolDay, gymDay, travel]
+        self.todayLoadoutID = schoolDay.id
 
         var seedEntries: [ChecklistEntry] = []
         for loadout in [schoolDay, gymDay, travel] {
@@ -81,7 +83,8 @@ final class MockLoadoutService: LoadoutService {
     }
 
     func todaysLoadout() -> Loadout? {
-        loadouts.first
+        guard let todayLoadoutID else { return loadouts.first }
+        return loadouts.first(where: { $0.id == todayLoadoutID }) ?? loadouts.first
     }
 
     func allLoadouts() -> [Loadout] {
@@ -101,6 +104,28 @@ final class MockLoadoutService: LoadoutService {
     func togglePacked(entryID: UUID) {
         guard let idx = entries.firstIndex(where: { $0.id == entryID }) else { return }
         entries[idx].isPacked.toggle()
+    }
+
+    @discardableResult
+    func createLoadout(name: String, symbol: String, tint: ItemTint, schedule: String, items newItems: [Item]) -> Loadout {
+        let loadout = Loadout(
+            name: name,
+            symbol: symbol,
+            tint: tint,
+            schedule: schedule,
+            itemIDs: newItems.map(\.id)
+        )
+
+        items.append(contentsOf: newItems)
+        loadouts.insert(loadout, at: 0)
+        entries.append(contentsOf: newItems.map { ChecklistEntry(itemID: $0.id, isPacked: false) })
+        todayLoadoutID = loadout.id
+        return loadout
+    }
+
+    func setTodaysLoadout(id: UUID) {
+        guard loadouts.contains(where: { $0.id == id }) else { return }
+        todayLoadoutID = id
     }
 
     func recentDayStats(days: Int) -> [DayStat] {

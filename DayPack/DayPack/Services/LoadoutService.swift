@@ -7,6 +7,9 @@ protocol LoadoutService: AnyObject {
     func items(in loadout: Loadout) -> [Item]
     func entries(for loadout: Loadout) -> [ChecklistEntry]
     func togglePacked(entryID: UUID)
+    @discardableResult
+    func createLoadout(name: String, symbol: String, tint: ItemTint, schedule: String, items: [Item]) -> Loadout
+    func setTodaysLoadout(id: UUID)
     func recentDayStats(days: Int) -> [DayStat]
     func currentStreak() -> Int
 }

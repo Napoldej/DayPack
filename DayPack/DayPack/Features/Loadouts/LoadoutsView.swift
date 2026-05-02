@@ -3,6 +3,7 @@ import SwiftUI
 struct LoadoutsView: View {
     @Environment(\.loadoutService) private var service
     @State private var viewModel: LoadoutsViewModel?
+    @State private var showBuilder = false
 
     var body: some View {
         NavigationStack {
@@ -14,7 +15,7 @@ struct LoadoutsView: View {
                             title: "No loadouts yet",
                             message: "Create your first loadout to get personalised packing reminders.",
                             ctaTitle: "Create a loadout",
-                            ctaAction: {}
+                            ctaAction: { showBuilder = true }
                         )
                     } else {
                         content(vm: vm)
@@ -27,10 +28,25 @@ struct LoadoutsView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
-                        // Add new loadout (not wired in v0.1)
+                        showBuilder = true
                     } label: {
                         Image(systemName: "plus.circle.fill")
                             .foregroundStyle(Color.dpOrange)
+                    }
+                }
+            }
+            .sheet(isPresented: $showBuilder, onDismiss: {
+                viewModel?.refresh()
+            }) {
+                if let vm = viewModel {
+                    LoadoutBuilderView { name, symbol, tint, schedule, items in
+                        _ = vm.createLoadout(
+                            name: name,
+                            symbol: symbol,
+                            tint: tint,
+                            schedule: schedule,
+                            items: items
+                        )
                     }
                 }
             }
@@ -38,6 +54,8 @@ struct LoadoutsView: View {
         .onAppear {
             if viewModel == nil {
                 viewModel = LoadoutsViewModel(service: service)
+            } else {
+                viewModel?.refresh()
             }
         }
     }
@@ -57,7 +75,8 @@ struct LoadoutsView: View {
                 LoadoutCard(
                     loadout: loadout,
                     itemCount: vm.itemCount(for: loadout),
-                    isActive: loadout.id == vm.todaysID
+                    isActive: loadout.id == vm.todaysID,
+                    onTap: { vm.setToday(loadout) }
                 )
             }
         }

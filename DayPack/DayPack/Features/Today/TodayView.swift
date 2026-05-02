@@ -29,6 +29,8 @@ struct TodayView: View {
         .onAppear {
             if viewModel == nil {
                 viewModel = TodayViewModel(service: service)
+            } else {
+                viewModel?.refresh()
             }
         }
     }
