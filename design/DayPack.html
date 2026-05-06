@@ -1,0 +1,1815 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=1400"/>
+<title>DayPack — iOS Hi-Fi Design</title>
+<style>
+  html, body { margin: 0; padding: 0; background: #EFEAE3; font-family: -apple-system, "SF Pro Text", system-ui, sans-serif; color: #1B1B1F; }
+  #root { min-height: 100vh; }
+  /* Hide scrollbars inside phone artboards while still allowing scroll */
+  .dp-card *::-webkit-scrollbar { display: none; }
+  .dp-card * { scrollbar-width: none; }
+  .dp-row { display: flex; flex-wrap: wrap; gap: 36px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+
+<script type="text/babel" data-presets="env,react">
+/* ────────────────────────────────────────────────────────────
+ * DayPack — single-file implementation
+ * Recreates the design exported from claude.ai/design.
+ * Tokens + primitives + 18 hi-fi screens in one HTML file.
+ * ──────────────────────────────────────────────────────────── */
+
+// ── Design tokens ─────────────────────────────────────────────
+const DP = {
+  orange: '#FF6B2C',
+  orangeDeep: '#E8531A',
+  orangeSoft: '#FFE9DC',
+  orangeMuted: '#FFF4ED',
+  green: '#2FBF71',
+  greenSoft: '#E5F7EC',
+  red: '#E5484D',
+  redSoft: '#FFEBEC',
+  amber: '#F5A524',
+  amberSoft: '#FFF3DC',
+  bg: '#F7F5F2',
+  bgGrouped: '#F2EFEA',
+  surface: '#FFFFFF',
+  surfaceAlt: '#FAF8F5',
+  hairline: 'rgba(60,60,67,0.10)',
+  divider: 'rgba(60,60,67,0.06)',
+  ink: '#1B1B1F',
+  ink2: '#3C3C43',
+  ink3: 'rgba(60,60,67,0.6)',
+  ink4: 'rgba(60,60,67,0.36)',
+  rSm: 10, rMd: 14, rLg: 18, rXl: 22, rXxl: 28,
+  shadowSoft: '0 1px 2px rgba(20,20,30,0.04), 0 8px 24px rgba(20,20,30,0.05)',
+  shadowCard: '0 1px 2px rgba(20,20,30,0.05), 0 12px 32px rgba(20,20,30,0.07)',
+  shadowPop:  '0 6px 12px rgba(20,20,30,0.08), 0 24px 56px rgba(20,20,30,0.14)',
+  font: '-apple-system, "SF Pro Text", "SF Pro Display", system-ui, sans-serif',
+  fontRound: '"SF Pro Rounded", -apple-system, system-ui, sans-serif',
+};
+
+// ── Icon set (line-style stroke = currentColor) ───────────────
+const Icon = ({ name, size = 22, stroke = 1.8, color = 'currentColor' }) => {
+  const s = { width: size, height: size, display: 'block' };
+  const common = { fill: 'none', stroke: color, strokeWidth: stroke, strokeLinecap: 'round', strokeLinejoin: 'round' };
+  switch (name) {
+    case 'backpack':   return <svg viewBox="0 0 24 24" style={s}><path d="M7 9V7a5 5 0 0110 0v2" {...common}/><rect x="4.5" y="9" width="15" height="12" rx="3.5" {...common}/><path d="M9 13h6M9 17h6" {...common}/><path d="M10 9.5h4" {...common}/></svg>;
+    case 'check':      return <svg viewBox="0 0 24 24" style={s}><path d="M5 12.5l4.5 4.5L19 7.5" {...common}/></svg>;
+    case 'plus':       return <svg viewBox="0 0 24 24" style={s}><path d="M12 5v14M5 12h14" {...common}/></svg>;
+    case 'chevR':      return <svg viewBox="0 0 24 24" style={s}><path d="M9 6l6 6-6 6" {...common}/></svg>;
+    case 'chevL':      return <svg viewBox="0 0 24 24" style={s}><path d="M15 6l-6 6 6 6" {...common}/></svg>;
+    case 'chevD':      return <svg viewBox="0 0 24 24" style={s}><path d="M6 9l6 6 6-6" {...common}/></svg>;
+    case 'close':      return <svg viewBox="0 0 24 24" style={s}><path d="M6 6l12 12M18 6L6 18" {...common}/></svg>;
+    case 'bell':       return <svg viewBox="0 0 24 24" style={s}><path d="M6 16V11a6 6 0 0112 0v5l1.5 2h-15L6 16z" {...common}/><path d="M10 20a2 2 0 004 0" {...common}/></svg>;
+    case 'pin':        return <svg viewBox="0 0 24 24" style={s}><path d="M12 21s7-6.5 7-12a7 7 0 10-14 0c0 5.5 7 12 7 12z" {...common}/><circle cx="12" cy="9" r="2.5" {...common}/></svg>;
+    case 'search':     return <svg viewBox="0 0 24 24" style={s}><circle cx="11" cy="11" r="6.5" {...common}/><path d="M16 16l4.5 4.5" {...common}/></svg>;
+    case 'gear':       return <svg viewBox="0 0 24 24" style={s}><circle cx="12" cy="12" r="3" {...common}/><path d="M19.4 15a1.7 1.7 0 00.34 1.87l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.7 1.7 0 00-1.87-.34 1.7 1.7 0 00-1.04 1.56V21a2 2 0 01-4 0v-.08a1.7 1.7 0 00-1.04-1.56 1.7 1.7 0 00-1.87.34l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.7 1.7 0 00.34-1.87 1.7 1.7 0 00-1.56-1.04H3a2 2 0 010-4h.08A1.7 1.7 0 004.64 9 1.7 1.7 0 004.3 7.13l-.06-.06a2 2 0 112.83-2.83l.06.06A1.7 1.7 0 009 4.64 1.7 1.7 0 0010.04 3.08V3a2 2 0 014 0v.08a1.7 1.7 0 001.04 1.56 1.7 1.7 0 001.87-.34l.06-.06a2 2 0 112.83 2.83l-.06.06a1.7 1.7 0 00-.34 1.87V9a1.7 1.7 0 001.56 1.04H21a2 2 0 010 4h-.08a1.7 1.7 0 00-1.56 1.04z" {...common}/></svg>;
+    case 'flame':      return <svg viewBox="0 0 24 24" style={s}><path d="M12 3s4 4 4 8a4 4 0 11-8 0c0-1.5.5-2.5 1.5-3.5C10 9 9 7 12 3z" {...common}/><path d="M9 14a3 3 0 006 0" {...common}/></svg>;
+    case 'dumbbell':   return <svg viewBox="0 0 24 24" style={s}><rect x="2" y="9" width="3" height="6" rx="1" {...common}/><rect x="19" y="9" width="3" height="6" rx="1" {...common}/><rect x="5" y="10.5" width="2" height="3" rx="0.5" {...common}/><rect x="17" y="10.5" width="2" height="3" rx="0.5" {...common}/><path d="M7 12h10" {...common}/></svg>;
+    case 'book':       return <svg viewBox="0 0 24 24" style={s}><path d="M4 5a2 2 0 012-2h6v18H6a2 2 0 01-2-2V5zM20 5a2 2 0 00-2-2h-6v18h6a2 2 0 002-2V5z" {...common}/></svg>;
+    case 'plane':      return <svg viewBox="0 0 24 24" style={s}><path d="M3 12l18-7-7 18-2-7-9-4z" {...common}/></svg>;
+    case 'briefcase':  return <svg viewBox="0 0 24 24" style={s}><rect x="3" y="7" width="18" height="13" rx="2" {...common}/><path d="M9 7V5a2 2 0 012-2h2a2 2 0 012 2v2" {...common}/><path d="M3 13h18" {...common}/></svg>;
+    case 'home':       return <svg viewBox="0 0 24 24" style={s}><path d="M3 11l9-7 9 7v9a2 2 0 01-2 2h-4v-7H9v7H5a2 2 0 01-2-2v-9z" {...common}/></svg>;
+    case 'list':       return <svg viewBox="0 0 24 24" style={s}><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01" {...common}/></svg>;
+    case 'sun':        return <svg viewBox="0 0 24 24" style={s}><circle cx="12" cy="12" r="4" {...common}/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4" {...common}/></svg>;
+    case 'moon':       return <svg viewBox="0 0 24 24" style={s}><path d="M20 14.5A8 8 0 119.5 4a7 7 0 0010.5 10.5z" {...common}/></svg>;
+    case 'water':      return <svg viewBox="0 0 24 24" style={s}><path d="M12 3s6 7 6 12a6 6 0 11-12 0c0-5 6-12 6-12z" {...common}/></svg>;
+    case 'shoe':       return <svg viewBox="0 0 24 24" style={s}><path d="M3 16c0-2 1-4 3-5l3-2 3 3 4 1c2 0 4 1 5 3v2H3v-2z" {...common}/><path d="M9 9l1-3" {...common}/></svg>;
+    case 'headphones': return <svg viewBox="0 0 24 24" style={s}><path d="M4 14a8 8 0 0116 0v4a2 2 0 01-2 2h-1v-6h3M4 14v4a2 2 0 002 2h1v-6H4" {...common}/></svg>;
+    case 'laptop':     return <svg viewBox="0 0 24 24" style={s}><rect x="4" y="5" width="16" height="11" rx="2" {...common}/><path d="M2 19h20" {...common}/></svg>;
+    case 'key':        return <svg viewBox="0 0 24 24" style={s}><circle cx="8" cy="14" r="3.5" {...common}/><path d="M11 13l9-9M16 8l3 3M14 10l3 3" {...common}/></svg>;
+    case 'wallet':     return <svg viewBox="0 0 24 24" style={s}><rect x="3" y="6" width="18" height="13" rx="2.5" {...common}/><path d="M16 13h2" {...common}/><path d="M3 9h14a4 4 0 014 4" {...common}/></svg>;
+    case 'umbrella':   return <svg viewBox="0 0 24 24" style={s}><path d="M3 12a9 9 0 0118 0H3z" {...common}/><path d="M12 12v7a2 2 0 002 2" {...common}/></svg>;
+    case 'toothbrush': return <svg viewBox="0 0 24 24" style={s}><path d="M5 19l8-8M11 13l3 3M14 10l4-4a2.8 2.8 0 014 4l-4 4" {...common}/></svg>;
+    case 'edit':       return <svg viewBox="0 0 24 24" style={s}><path d="M4 20l4-1L20 7l-3-3L5 16l-1 4z" {...common}/></svg>;
+    case 'trash':      return <svg viewBox="0 0 24 24" style={s}><path d="M4 7h16M9 7V5a2 2 0 012-2h2a2 2 0 012 2v2M6 7l1 13a2 2 0 002 2h6a2 2 0 002-2l1-13" {...common}/></svg>;
+    case 'sparkle':    return <svg viewBox="0 0 24 24" style={s}><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3zM18 16l.8 2.2L21 19l-2.2.8L18 22l-.8-2.2L15 19l2.2-.8L18 16z" {...common}/></svg>;
+    case 'calendar':   return <svg viewBox="0 0 24 24" style={s}><rect x="3.5" y="5" width="17" height="16" rx="2.5" {...common}/><path d="M3.5 10h17M8 3v4M16 3v4" {...common}/></svg>;
+    case 'clock':      return <svg viewBox="0 0 24 24" style={s}><circle cx="12" cy="12" r="8.5" {...common}/><path d="M12 7.5V12l3 2" {...common}/></svg>;
+    case 'arrow':      return <svg viewBox="0 0 24 24" style={s}><path d="M5 12h14M13 6l6 6-6 6" {...common}/></svg>;
+    default: return null;
+  }
+};
+
+// ── Shared primitives ────────────────────────────────────────
+const Switch = ({ on = true, color }) => {
+  const c = color || DP.orange;
+  return (
+    <div style={{ width: 51, height: 31, borderRadius: 100, background: on ? c : '#E5E5EA', position: 'relative', flexShrink: 0 }}>
+      <div style={{ position: 'absolute', top: 2, left: on ? 22 : 2, width: 27, height: 27, borderRadius: 100, background: '#fff', boxShadow: '0 3px 8px rgba(0,0,0,0.15), 0 1px 1px rgba(0,0,0,0.06)' }}/>
+    </div>
+  );
+};
+
+const Check = ({ checked = false, size = 26, color = DP.green }) => {
+  if (!checked) return <div style={{ width: size, height: size, borderRadius: 100, border: `1.6px solid ${DP.ink4}`, flexShrink: 0 }}/>;
+  return (
+    <div style={{ width: size, height: size, borderRadius: 100, background: color, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 2px 6px ${color}55` }}>
+      <svg width={size*0.55} height={size*0.55} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M5 12.5l4.5 4.5L19 7.5"/>
+      </svg>
+    </div>
+  );
+};
+
+const PrimaryButton = ({ children, full = true, style, color }) => (
+  <div style={{
+    background: color || DP.orange, color: '#fff', height: 54, borderRadius: 16,
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    fontFamily: DP.font, fontSize: 17, fontWeight: 600, letterSpacing: -0.2,
+    boxShadow: '0 6px 16px rgba(255,107,44,0.30)',
+    width: full ? '100%' : undefined, padding: full ? 0 : '0 22px',
+    ...style,
+  }}>{children}</div>
+);
+
+const SecondaryButton = ({ children, style }) => (
+  <div style={{
+    background: DP.orangeSoft, color: DP.orangeDeep, height: 54, borderRadius: 16,
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    fontFamily: DP.font, fontSize: 17, fontWeight: 600, letterSpacing: -0.2, width: '100%',
+    ...style,
+  }}>{children}</div>
+);
+
+const TextButton = ({ children, color = DP.orange, style }) => (
+  <div style={{ color, fontFamily: DP.font, fontSize: 17, fontWeight: 600, padding: '14px 0', textAlign: 'center', ...style }}>{children}</div>
+);
+
+const StatusBar = ({ dark = false, time = '9:41' }) => {
+  const c = dark ? '#fff' : DP.ink;
+  return (
+    <div style={{
+      height: 54, position: 'relative', zIndex: 5,
+      display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between',
+      padding: '0 32px 12px', fontFamily: DP.font, color: c, pointerEvents: 'none',
+    }}>
+      <div style={{ fontSize: 17, fontWeight: 600, letterSpacing: -0.2, width: 110 }}>{time}</div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+        <svg width="18" height="11" viewBox="0 0 18 11"><g fill={c}>
+          <rect x="0" y="7" width="3" height="4" rx="0.7"/>
+          <rect x="5" y="5" width="3" height="6" rx="0.7"/>
+          <rect x="10" y="2.5" width="3" height="8.5" rx="0.7"/>
+          <rect x="15" y="0" width="3" height="11" rx="0.7"/>
+        </g></svg>
+        <svg width="17" height="12" viewBox="0 0 17 12"><path d="M8.5 2c2.6 0 5 1 6.8 2.7M8.5 5.2c1.7 0 3.3.7 4.5 1.8M8.5 8.4c.8 0 1.5.3 2 .9M8.5 11l.5-.5L8.5 11z" stroke={c} strokeWidth="1.2" fill={c}/></svg>
+        <svg width="27" height="12" viewBox="0 0 27 12">
+          <rect x="0.5" y="0.5" width="22" height="11" rx="3" fill="none" stroke={c} opacity="0.5"/>
+          <rect x="2" y="2" width="19" height="8" rx="1.5" fill={c}/>
+          <rect x="23.5" y="4" width="2" height="4" rx="0.6" fill={c} opacity="0.5"/>
+        </svg>
+      </div>
+    </div>
+  );
+};
+
+const SectionLabel = ({ children, style }) => (
+  <div style={{ fontFamily: DP.font, fontSize: 13, fontWeight: 600, color: DP.ink3, letterSpacing: 0.4, textTransform: 'uppercase', marginBottom: 10, ...style }}>{children}</div>
+);
+
+const Card = ({ children, style, padding = 0 }) => (
+  <div style={{ background: DP.surface, borderRadius: DP.rXl, boxShadow: DP.shadowSoft, padding, ...style }}>{children}</div>
+);
+
+const TabBar = ({ active = 'today' }) => {
+  const item = (key, icon, label) => {
+    const on = active === key;
+    return (
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, color: on ? DP.orange : DP.ink4 }}>
+        <Icon name={icon} size={26} stroke={on ? 2.2 : 1.7}/>
+        <div style={{ fontFamily: DP.font, fontSize: 10, fontWeight: 600, letterSpacing: 0.1 }}>{label}</div>
+      </div>
+    );
+  };
+  return (
+    <div style={{
+      position: 'absolute', bottom: 0, left: 0, right: 0,
+      paddingBottom: 30, paddingTop: 10,
+      background: 'rgba(255,255,255,0.92)',
+      backdropFilter: 'blur(20px) saturate(180%)',
+      WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+      borderTop: `0.5px solid ${DP.hairline}`,
+      display: 'flex', zIndex: 20,
+    }}>
+      {item('today', 'sun', 'Today')}
+      {item('loadouts', 'backpack', 'Loadouts')}
+      {item('stats', 'flame', 'Stats')}
+      {item('settings', 'gear', 'Settings')}
+    </div>
+  );
+};
+
+const Monogram = ({ size = 56, radius = 16 }) => (
+  <div style={{
+    width: size, height: size, borderRadius: radius, background: DP.orange, color: '#fff',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    fontFamily: DP.fontRound, fontWeight: 800, fontSize: size * 0.42,
+    letterSpacing: -1, boxShadow: '0 8px 20px rgba(255,107,44,0.35)',
+  }}>DP</div>
+);
+
+const LoadoutIcon = ({ name, color = DP.orange, bg, size = 44, r = 12 }) => (
+  <div style={{
+    width: size, height: size, borderRadius: r,
+    background: bg || (color === DP.orange ? DP.orangeSoft : `${color}1A`),
+    color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+  }}>
+    <Icon name={name} size={size * 0.5} stroke={1.9}/>
+  </div>
+);
+
+const ProgressBar = ({ value = 0, height = 8, color = DP.orange, bg = '#F0EAE2' }) => (
+  <div style={{ height, background: bg, borderRadius: 100, overflow: 'hidden', position: 'relative' }}>
+    <div style={{
+      position: 'absolute', top: 0, left: 0, bottom: 0,
+      width: `${Math.max(0, Math.min(100, value))}%`,
+      background: `linear-gradient(90deg, ${color}, ${DP.orangeDeep})`,
+      borderRadius: 100,
+    }}/>
+  </div>
+);
+
+const Pill = ({ children, color = DP.ink3, bg = '#F0EAE2', style }) => (
+  <span style={{
+    display: 'inline-flex', alignItems: 'center', gap: 4, height: 22, padding: '0 9px', borderRadius: 100,
+    background: bg, color, fontFamily: DP.font, fontSize: 11.5, fontWeight: 600, letterSpacing: 0.1,
+    ...style,
+  }}>{children}</span>
+);
+
+// ── iPhone shell ─────────────────────────────────────────────
+const PHONE_W = 390, PHONE_H = 844;
+const Phone = ({ children, dark = false, bg, style }) => (
+  <div style={{
+    width: PHONE_W, height: PHONE_H, borderRadius: 54, overflow: 'hidden', position: 'relative',
+    background: dark ? '#000' : (bg || DP.bg),
+    boxShadow: '0 0 0 12px #1c1c1e, 0 0 0 13px #2a2a2e, 0 30px 60px rgba(0,0,0,0.18)',
+    fontFamily: DP.font, color: DP.ink, WebkitFontSmoothing: 'antialiased',
+    ...style,
+  }}>
+    <div style={{ position: 'absolute', top: 11, left: '50%', transform: 'translateX(-50%)', width: 124, height: 36, borderRadius: 24, background: '#000', zIndex: 100 }}/>
+    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 50 }}><StatusBar dark={dark}/></div>
+    <div style={{
+      position: 'absolute', bottom: 8, left: '50%', transform: 'translateX(-50%)',
+      width: 134, height: 5, borderRadius: 100,
+      background: dark ? 'rgba(255,255,255,0.65)' : 'rgba(0,0,0,0.28)', zIndex: 99,
+    }}/>
+    {children}
+  </div>
+);
+
+/* ────────────── SCREENS ────────────── */
+
+// 1·1 Onboarding — Welcome
+const OB_Welcome = () => (
+  <Phone>
+    <div style={{ paddingTop: 54, height: '100%', display: 'flex', flexDirection: 'column', padding: '54px 28px 30px' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 28 }}>
+        <div style={{ position: 'relative' }}>
+          <div style={{ position: 'absolute', inset: -30, borderRadius: 200, background: 'radial-gradient(circle, rgba(255,107,44,0.18), rgba(255,107,44,0) 70%)' }}/>
+          <div style={{
+            width: 120, height: 120, borderRadius: 32, background: '#fff',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative',
+            boxShadow: '0 16px 40px rgba(255,107,44,0.20)', border: `1.5px solid ${DP.orangeSoft}`,
+          }}>
+            <div style={{ color: DP.orange }}><Icon name="backpack" size={64} stroke={1.6}/></div>
+          </div>
+        </div>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontFamily: DP.fontRound, fontSize: 36, fontWeight: 800, letterSpacing: -1, color: DP.ink, lineHeight: 1.05 }}>
+            Never Forget<br/>Again
+          </div>
+          <div style={{ fontSize: 16, color: DP.ink3, marginTop: 12, lineHeight: 1.45, padding: '0 20px' }}>
+            Your smart daily-loadout companion. Pack with confidence, leave with peace of mind.
+          </div>
+        </div>
+      </div>
+      <div>
+        <PrimaryButton>Get Started</PrimaryButton>
+        <TextButton color={DP.ink3}>I already have an account</TextButton>
+      </div>
+    </div>
+  </Phone>
+);
+
+// 1·2 Onboarding — Set Home Location
+const OB_Location = () => (
+  <Phone>
+    <div style={{ paddingTop: 54, height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ padding: '12px 22px 8px', display: 'flex', alignItems: 'center', gap: 14 }}>
+        <div style={{ color: DP.ink2 }}><Icon name="chevL" size={22}/></div>
+        <div style={{ flex: 1, display: 'flex', gap: 4 }}>
+          {[0,1,2,3,4].map(i => (
+            <div key={i} style={{ flex: 1, height: 4, borderRadius: 100, background: i <= 1 ? DP.orange : DP.bgGrouped }}/>
+          ))}
+        </div>
+        <div style={{ fontSize: 14, fontWeight: 600, color: DP.ink3 }}>Skip</div>
+      </div>
+      <div style={{ padding: '14px 28px 10px' }}>
+        <div style={{ fontFamily: DP.fontRound, fontSize: 28, fontWeight: 700, letterSpacing: -0.6 }}>Set Your Home</div>
+        <div style={{ fontSize: 15, color: DP.ink3, marginTop: 6, lineHeight: 1.4 }}>
+          We'll quietly check that you're packed only when you're about to leave home.
+        </div>
+      </div>
+      <div style={{ padding: '14px 22px 0' }}>
+        <div style={{ background: '#fff', borderRadius: 14, padding: '13px 14px', display: 'flex', alignItems: 'center', gap: 10, color: DP.ink3, boxShadow: DP.shadowSoft, fontSize: 15 }}>
+          <Icon name="search" size={18} color={DP.ink3}/><span>Search address</span>
+        </div>
+      </div>
+      <div style={{ flex: 1, padding: '16px 22px 0', position: 'relative' }}>
+        <div style={{ height: '100%', borderRadius: 22, position: 'relative', overflow: 'hidden', background: 'linear-gradient(180deg, #E9F0F7 0%, #DDE9F2 60%, #E9F0E5 100%)', boxShadow: DP.shadowSoft }}>
+          <svg width="100%" height="100%" style={{ position: 'absolute', inset: 0 }} preserveAspectRatio="none" viewBox="0 0 300 460">
+            <path d="M0 90 Q120 110 300 80" stroke="#fff" strokeWidth="14" fill="none" opacity="0.8"/>
+            <path d="M0 90 Q120 110 300 80" stroke="#CFD8DC" strokeWidth="1" fill="none"/>
+            <path d="M30 0 L80 460" stroke="#fff" strokeWidth="10" fill="none" opacity="0.8"/>
+            <path d="M260 0 L210 460" stroke="#fff" strokeWidth="10" fill="none" opacity="0.8"/>
+            <path d="M0 280 L300 320" stroke="#fff" strokeWidth="22" fill="none" opacity="0.9"/>
+            <path d="M0 280 L300 320" stroke="#CFD8DC" strokeWidth="1" fill="none"/>
+            <rect x="120" y="180" width="80" height="80" rx="14" fill="#C9E0BF" opacity="0.7"/>
+          </svg>
+          <div style={{
+            position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)',
+            width: 180, height: 180, borderRadius: 200,
+            background: 'rgba(255,107,44,0.14)', border: `1.5px dashed ${DP.orange}`,
+          }}/>
+          <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-100%)' }}>
+            <div style={{ width: 44, height: 44, borderRadius: 100, background: DP.orange, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 20px rgba(255,107,44,0.45)', border: '3px solid #fff' }}>
+              <Icon name="home" size={22} stroke={2.2} color="#fff"/>
+            </div>
+            <div style={{ width: 0, height: 0, margin: '-2px auto 0', borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderTop: `8px solid ${DP.orange}` }}/>
+          </div>
+          <div style={{ position: 'absolute', bottom: 14, left: 14, right: 14, background: '#fff', borderRadius: 14, padding: '10px 14px', boxShadow: DP.shadowSoft, display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ width: 32, height: 32, borderRadius: 8, background: DP.orangeSoft, color: DP.orange, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Icon name="pin" size={16} stroke={2}/>
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 14, fontWeight: 600, color: DP.ink }}>118 Maple St, Apt 3B</div>
+              <div style={{ fontSize: 12, color: DP.ink3 }}>120m radius · drag pin to adjust</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style={{ padding: '18px 22px 30px' }}><PrimaryButton>Confirm Home Location</PrimaryButton></div>
+    </div>
+  </Phone>
+);
+
+// 1·3 Onboarding — Location Permission
+const OB_Permission = () => (
+  <Phone bg="#E8E8EC">
+    <div style={{ paddingTop: 54, height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ flex: 1, padding: '12px 22px', position: 'relative', opacity: 0.55 }}>
+        <div style={{ height: '100%', borderRadius: 22, background: 'linear-gradient(180deg, #E9F0F7 0%, #DDE9F2 60%, #E9F0E5 100%)' }}/>
+      </div>
+      <div style={{
+        position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 300,
+        background: 'rgba(245,245,247,0.95)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
+        borderRadius: 16, overflow: 'hidden', boxShadow: '0 24px 60px rgba(0,0,0,0.25)', zIndex: 10,
+      }}>
+        <div style={{ padding: '20px 18px 16px', textAlign: 'center' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}><Monogram size={48} radius={11}/></div>
+          <div style={{ fontFamily: DP.font, fontSize: 17, fontWeight: 700, color: '#000', letterSpacing: -0.2 }}>
+            Allow "DayPack" to use your location?
+          </div>
+          <div style={{ fontSize: 13, color: '#000', opacity: 0.78, marginTop: 6, lineHeight: 1.4 }}>
+            Your location is used to nudge you when you leave home and your loadout isn't packed yet.
+          </div>
+        </div>
+        <div style={{ borderTop: '0.5px solid rgba(0,0,0,0.18)' }}>
+          {[
+            { t: 'Allow While Using App', bold: true },
+            { t: 'Allow Once' },
+            { t: "Don't Allow" },
+          ].map((b, i) => (
+            <div key={i} style={{
+              padding: '12px 0', textAlign: 'center', fontSize: 17, color: '#0A84FF',
+              fontWeight: b.bold ? 600 : 400, borderTop: i > 0 ? '0.5px solid rgba(0,0,0,0.18)' : 'none',
+            }}>{b.t}</div>
+          ))}
+        </div>
+      </div>
+      <div style={{ position: 'absolute', bottom: 50, left: 0, right: 0, textAlign: 'center', padding: '0 36px' }}>
+        <div style={{ background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(10px)', borderRadius: 14, padding: '10px 14px', fontSize: 12, color: DP.ink3, lineHeight: 1.4 }}>
+          Tip: Pick "Always Allow" later to detect when you leave home automatically.
+        </div>
+      </div>
+    </div>
+  </Phone>
+);
+
+// 1·4 Onboarding — First Profile
+const OB_FirstProfile = () => {
+  const presets = [
+    { t: 'School Day', sub: '8 items', ic: 'book', tint: DP.orange, sel: true },
+    { t: 'Work Day',   sub: '9 items', ic: 'briefcase', tint: '#0A84FF' },
+    { t: 'Gym Day',    sub: '6 items', ic: 'dumbbell', tint: '#7C5BFF' },
+    { t: 'Travel',     sub: '14 items', ic: 'plane', tint: '#19B5A4' },
+  ];
+  return (
+    <Phone>
+      <div style={{ paddingTop: 54, height: '100%', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ padding: '12px 22px 8px', display: 'flex', alignItems: 'center', gap: 14 }}>
+          <div style={{ color: DP.ink2 }}><Icon name="chevL" size={22}/></div>
+          <div style={{ flex: 1, display: 'flex', gap: 4 }}>
+            {[0,1,2,3,4].map(i => (
+              <div key={i} style={{ flex: 1, height: 4, borderRadius: 100, background: i <= 2 ? DP.orange : DP.bgGrouped }}/>
+            ))}
+          </div>
+          <div style={{ fontSize: 14, fontWeight: 600, color: DP.ink3 }}>Skip</div>
+        </div>
+        <div style={{ padding: '14px 28px 10px' }}>
+          <div style={{ fontFamily: DP.fontRound, fontSize: 28, fontWeight: 700, letterSpacing: -0.6 }}>
+            Create Your First Profile
+          </div>
+          <div style={{ fontSize: 15, color: DP.ink3, marginTop: 6, lineHeight: 1.4 }}>
+            What kind of day do you need to pack for? Pick one to start — you can add more later.
+          </div>
+        </div>
+        <div style={{ padding: '20px 22px 0', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, flex: 1 }}>
+          {presets.map((p, i) => (
+            <div key={i} style={{
+              background: p.sel ? DP.orangeMuted : '#fff', borderRadius: 20, padding: '20px 16px 18px',
+              boxShadow: DP.shadowSoft,
+              border: p.sel ? `1.5px solid ${DP.orange}` : '1.5px solid transparent',
+              position: 'relative', display: 'flex', flexDirection: 'column', gap: 14,
+            }}>
+              {p.sel && (
+                <div style={{
+                  position: 'absolute', top: 10, right: 10, width: 22, height: 22, borderRadius: 100,
+                  background: DP.orange, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <Icon name="check" size={14} stroke={3} color="#fff"/>
+                </div>
+              )}
+              <LoadoutIcon name={p.ic} color={p.tint} size={48} r={14}/>
+              <div>
+                <div style={{ fontFamily: DP.fontRound, fontSize: 18, fontWeight: 700, color: DP.ink, letterSpacing: -0.3 }}>{p.t}</div>
+                <div style={{ fontSize: 12, color: DP.ink3, marginTop: 2 }}>{p.sub}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div style={{ padding: '18px 22px 30px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, color: DP.ink3, fontSize: 13, padding: '10px 0' }}>
+            <Icon name="plus" size={14} stroke={2.2} color={DP.ink3}/><span>Or build from scratch</span>
+          </div>
+          <PrimaryButton>Continue</PrimaryButton>
+        </div>
+      </div>
+    </Phone>
+  );
+};
+
+// 1·5 Onboarding — Add Items
+const OB_AddItems = () => {
+  const items = [
+    { name: 'Notebook', icon: 'book', on: true },
+    { name: 'Laptop', icon: 'laptop', on: true },
+    { name: 'Charger', icon: 'briefcase', on: true },
+    { name: 'Water Bottle', icon: 'water', on: true },
+    { name: 'AirPods', icon: 'headphones', on: false },
+    { name: 'Wallet', icon: 'wallet', on: true },
+    { name: 'Keys', icon: 'key', on: true },
+  ];
+  return (
+    <Phone>
+      <div style={{ paddingTop: 54, height: '100%', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ padding: '12px 22px 8px', display: 'flex', alignItems: 'center', gap: 14 }}>
+          <div style={{ color: DP.ink2 }}><Icon name="chevL" size={22}/></div>
+          <div style={{ flex: 1, display: 'flex', gap: 4 }}>
+            {[0,1,2,3,4].map(i => (
+              <div key={i} style={{ flex: 1, height: 4, borderRadius: 100, background: i <= 3 ? DP.orange : DP.bgGrouped }}/>
+            ))}
+          </div>
+          <div style={{ fontSize: 14, fontWeight: 600, color: DP.ink3 }}>Skip</div>
+        </div>
+        <div style={{ padding: '14px 28px 10px' }}>
+          <div style={{ fontFamily: DP.fontRound, fontSize: 28, fontWeight: 700, letterSpacing: -0.6 }}>Add Items to School Day</div>
+          <div style={{ fontSize: 15, color: DP.ink3, marginTop: 6, lineHeight: 1.4 }}>
+            We've suggested a few. Toggle what's yours, or add your own below.
+          </div>
+        </div>
+        <div style={{ flex: 1, overflow: 'auto', padding: '16px 18px 8px' }}>
+          <Card padding="0">
+            {items.map((it, i) => (
+              <React.Fragment key={i}>
+                <div style={{ padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{
+                    width: 36, height: 36, borderRadius: 10,
+                    background: it.on ? DP.orangeSoft : DP.bgGrouped,
+                    color: it.on ? DP.orangeDeep : DP.ink2,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}><Icon name={it.icon} size={18} stroke={1.9}/></div>
+                  <div style={{ flex: 1, fontSize: 16, fontWeight: 600, color: DP.ink, letterSpacing: -0.2 }}>{it.name}</div>
+                  <Switch on={it.on}/>
+                </div>
+                {i < items.length - 1 && <div style={{ height: 1, background: DP.divider, marginLeft: 60 }}/>}
+              </React.Fragment>
+            ))}
+          </Card>
+          <div style={{
+            marginTop: 12, padding: '14px 14px', background: DP.orangeMuted, borderRadius: 16,
+            display: 'flex', alignItems: 'center', gap: 10, border: `1.5px dashed ${DP.orange}`, color: DP.orangeDeep,
+          }}>
+            <Icon name="plus" size={20} stroke={2.4}/>
+            <div style={{ fontSize: 15, fontWeight: 600 }}>Add your own item</div>
+          </div>
+        </div>
+        <div style={{ padding: '12px 22px 30px' }}>
+          <PrimaryButton>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+              Done — Let's Go <Icon name="arrow" size={18} stroke={2.2} color="#fff"/>
+            </span>
+          </PrimaryButton>
+        </div>
+      </div>
+    </Phone>
+  );
+};
+
+// 1·6 Onboarding — All Set
+const OB_Done = () => (
+  <Phone>
+    <div style={{ paddingTop: 54, height: '100%', display: 'flex', flexDirection: 'column', padding: '40px 28px 30px' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 26 }}>
+        <div style={{ position: 'relative' }}>
+          <div style={{ position: 'absolute', inset: -28, borderRadius: 200, background: 'radial-gradient(circle, rgba(47,191,113,0.18), rgba(47,191,113,0) 70%)' }}/>
+          <div style={{
+            width: 110, height: 110, borderRadius: 100, background: '#fff', border: `2px solid ${DP.greenSoft}`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative',
+            boxShadow: '0 16px 40px rgba(47,191,113,0.20)',
+          }}>
+            <Check checked={true} size={68} color={DP.green}/>
+          </div>
+        </div>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontFamily: DP.fontRound, fontSize: 32, fontWeight: 800, letterSpacing: -0.8 }}>You're all set!</div>
+          <div style={{ fontSize: 15, color: DP.ink3, marginTop: 8, lineHeight: 1.45, padding: '0 8px' }}>
+            DayPack will gently nudge you when you leave home, so you never forget a thing.
+          </div>
+        </div>
+        <div style={{
+          background: DP.orangeMuted, borderRadius: 18, padding: '14px 16px',
+          display: 'flex', alignItems: 'center', gap: 12, width: '100%', border: `1px solid ${DP.orangeSoft}`,
+        }}>
+          <LoadoutIcon name="book" color={DP.orange} size={48} r={14}/>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontFamily: DP.fontRound, fontSize: 18, fontWeight: 700, color: DP.ink, letterSpacing: -0.3 }}>School Day</div>
+            <div style={{ fontSize: 13, color: DP.ink3, marginTop: 2 }}>Your first loadout</div>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ fontFamily: DP.fontRound, fontSize: 22, fontWeight: 800, color: DP.orange, letterSpacing: -0.4 }}>6</div>
+            <div style={{ fontSize: 11, color: DP.ink3, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.4 }}>items</div>
+          </div>
+        </div>
+      </div>
+      <PrimaryButton>Go to Home</PrimaryButton>
+    </div>
+  </Phone>
+);
+
+// 2·1 Today
+const Screen_Today = () => {
+  const items = [
+    { name: 'Laptop', icon: 'laptop', done: true },
+    { name: 'Charger', icon: 'briefcase', done: true },
+    { name: 'Notebook', icon: 'book', done: true },
+    { name: 'Water Bottle', icon: 'water', done: false },
+    { name: 'AirPods', icon: 'headphones', done: false },
+    { name: 'Keys', icon: 'key', done: false, always: true },
+  ];
+  const done = items.filter(i => i.done).length;
+  const pct = Math.round(done / items.length * 100);
+  const ready = pct === 100;
+
+  return (
+    <Phone>
+      <div style={{ paddingTop: 54, height: '100%', overflow: 'auto', paddingBottom: 110 }}>
+        <div style={{ padding: '10px 22px 12px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: DP.ink3, letterSpacing: 0.3, textTransform: 'uppercase' }}>Tue · Apr 28</div>
+              <div style={{ fontFamily: DP.fontRound, fontSize: 30, fontWeight: 700, letterSpacing: -0.7, marginTop: 2, color: DP.ink }}>Morning, Maya</div>
+            </div>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <div style={{ width: 38, height: 38, borderRadius: 100, background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: DP.shadowSoft, color: DP.ink2, position: 'relative' }}>
+                <Icon name="bell" size={18} stroke={1.9}/>
+                <div style={{ position: 'absolute', top: 8, right: 9, width: 8, height: 8, borderRadius: 100, background: DP.red, border: '1.5px solid #fff' }}/>
+              </div>
+              <div style={{
+                width: 38, height: 38, borderRadius: 100, background: '#FFE0CC', border: `2px solid ${DP.orangeSoft}`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontFamily: DP.fontRound, fontWeight: 700, fontSize: 14, color: DP.orangeDeep,
+              }}>M</div>
+            </div>
+          </div>
+        </div>
+
+        <div style={{ padding: '0 18px 12px' }}>
+          <div style={{
+            background: ready ? DP.greenSoft : DP.orangeMuted, borderRadius: 14, padding: '10px 12px',
+            display: 'flex', alignItems: 'center', gap: 10,
+            border: `1px solid ${ready ? '#2FBF7133' : DP.orangeSoft}`,
+          }}>
+            <div style={{ width: 28, height: 28, borderRadius: 100, background: ready ? DP.green : DP.orange, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <Icon name={ready ? 'check' : 'home'} size={15} stroke={2.4} color="#fff"/>
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: ready ? '#1A7340' : DP.orangeDeep, letterSpacing: -0.1 }}>
+                {ready ? "You're ready to leave" : 'At home · 2 items left to pack'}
+              </div>
+              <div style={{ fontSize: 11.5, color: DP.ink3, marginTop: 1 }}>
+                {ready ? 'No nudges queued · safe travels' : "We'll nudge you when you head out the door"}
+              </div>
+            </div>
+            <div style={{ fontSize: 11, color: DP.ink3, fontWeight: 600 }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                <span style={{ width: 6, height: 6, borderRadius: 100, background: DP.green, display: 'inline-block' }}/> Live
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div style={{ padding: '0 18px' }}>
+          <div style={{ background: '#fff', borderRadius: DP.rXl, padding: '18px 18px 16px', boxShadow: DP.shadowSoft }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+              <LoadoutIcon name="book" size={42} r={12}/>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: DP.orange, letterSpacing: 0.5, textTransform: 'uppercase' }}>
+                  Today's loadout · auto-picked
+                </div>
+                <div style={{ fontFamily: DP.fontRound, fontSize: 22, fontWeight: 700, color: DP.ink, letterSpacing: -0.4 }}>
+                  School Day
+                </div>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+                <Pill bg={DP.orangeSoft} color={DP.orangeDeep}>
+                  <Icon name="clock" size={11} stroke={2.2}/> Leave 8:30
+                </Pill>
+                <div style={{ fontSize: 11, color: DP.ink3, fontWeight: 600 }}>in 42 min</div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
+              <div style={{ fontFamily: DP.fontRound, fontSize: 16, fontWeight: 700, color: DP.ink }}>
+                {done} of {items.length} packed
+              </div>
+              <div style={{ fontFamily: DP.fontRound, fontSize: 15, fontWeight: 700, color: DP.orange }}>{pct}%</div>
+            </div>
+            <ProgressBar value={pct} height={10}/>
+
+            <div style={{ marginTop: 14, borderTop: `1px solid ${DP.divider}`, paddingTop: 8 }}>
+              {items.slice(0, 4).map((it, i) => (
+                <div key={i} style={{
+                  display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0',
+                  borderBottom: i < 3 ? `1px solid ${DP.divider}` : 'none',
+                }}>
+                  <Check checked={it.done}/>
+                  <div style={{
+                    width: 30, height: 30, borderRadius: 8,
+                    background: it.done ? DP.greenSoft : DP.bgGrouped,
+                    color: it.done ? DP.green : DP.ink2,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                  }}>
+                    <Icon name={it.icon} size={17} stroke={1.9}/>
+                  </div>
+                  <div style={{
+                    flex: 1, fontSize: 16, fontWeight: 500, color: it.done ? DP.ink3 : DP.ink,
+                    textDecoration: it.done ? 'line-through' : 'none', textDecorationColor: DP.ink4,
+                  }}>{it.name}</div>
+                  {it.always && <Pill bg={DP.bgGrouped}>Always</Pill>}
+                </div>
+              ))}
+              <div style={{ padding: '8px 0 0', textAlign: 'center', fontSize: 13, fontWeight: 600, color: DP.orange }}>
+                Show all {items.length} items
+              </div>
+            </div>
+
+            <div style={{ marginTop: 14 }}>
+              <PrimaryButton>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                  Start Walk-Out Check <Icon name="arrow" size={18} stroke={2.2} color="#fff"/>
+                </span>
+              </PrimaryButton>
+            </div>
+          </div>
+        </div>
+
+        <div style={{ padding: '20px 0 0' }}>
+          <div style={{ padding: '0 22px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{
+              fontFamily: DP.font, fontSize: 13, fontWeight: 700, color: DP.ink2,
+              letterSpacing: 0.3, textTransform: 'uppercase',
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+            }}>
+              <Icon name="sparkle" size={14} color={DP.orange} stroke={1.8}/> Smart suggestions
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 10, padding: '12px 18px 4px', overflowX: 'auto', scrollbarWidth: 'none' }}>
+            {[
+              { ic: 'umbrella', t: 'Add Umbrella', s: '60% rain at 4 PM', tint: '#5E81F4' },
+              { ic: 'water', t: 'Extra Water', s: '83°F today', tint: '#19B5A4' },
+              { ic: 'book', t: 'Calc textbook', s: 'Class added', tint: DP.orange },
+            ].map((s, i) => (
+              <div key={i} style={{
+                flex: '0 0 auto', minWidth: 168, background: '#fff', borderRadius: 16, padding: '12px 14px',
+                boxShadow: DP.shadowSoft, display: 'flex', flexDirection: 'column', gap: 8,
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ width: 32, height: 32, borderRadius: 9, background: `${s.tint}1A`, color: s.tint, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Icon name={s.ic} size={17} stroke={1.9}/>
+                  </div>
+                  <div style={{ width: 24, height: 24, borderRadius: 100, background: DP.orange, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Icon name="plus" size={14} stroke={2.6} color="#fff"/>
+                  </div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: DP.ink, letterSpacing: -0.2 }}>{s.t}</div>
+                  <div style={{ fontSize: 11.5, color: DP.ink3, marginTop: 1 }}>{s.s}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ padding: '20px 18px 0', display: 'flex', gap: 10 }}>
+          <div style={{ flex: 1, background: '#fff', borderRadius: 16, padding: '12px 14px', boxShadow: DP.shadowSoft, display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ width: 32, height: 32, borderRadius: 100, background: DP.orangeSoft, color: DP.orange, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Icon name="flame" size={17} stroke={2.2}/>
+            </div>
+            <div>
+              <div style={{ fontFamily: DP.fontRound, fontSize: 22, fontWeight: 700, color: DP.ink, letterSpacing: -0.4, lineHeight: 1 }}>12</div>
+              <div style={{ fontSize: 11, color: DP.ink3, fontWeight: 600 }}>day streak</div>
+            </div>
+          </div>
+          <div style={{ flex: 1, background: '#fff', borderRadius: 16, padding: '12px 14px', boxShadow: DP.shadowSoft, display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ width: 32, height: 32, borderRadius: 100, background: DP.greenSoft, color: DP.green, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Icon name="check" size={17} stroke={2.4}/>
+            </div>
+            <div>
+              <div style={{ fontFamily: DP.fontRound, fontSize: 22, fontWeight: 700, color: DP.ink, letterSpacing: -0.4, lineHeight: 1 }}>96%</div>
+              <div style={{ fontSize: 11, color: DP.ink3, fontWeight: 600 }}>perfect this mo.</div>
+            </div>
+          </div>
+        </div>
+
+        <div style={{ padding: '24px 22px 6px' }}><SectionLabel>Up Next</SectionLabel></div>
+        <div style={{ padding: '0 18px' }}>
+          <Card padding="0">
+            {[
+              { ic: 'dumbbell', t: 'Gym Day', s: 'Today · 5:30 PM · 6 items', tint: '#7C5BFF' },
+              { ic: 'plane', t: 'Flight to NYC', s: 'Sat · 14 items · 3 days', tint: '#0A84FF' },
+            ].map((row, i) => (
+              <div key={i} style={{
+                display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px',
+                borderBottom: i === 0 ? `1px solid ${DP.divider}` : 'none',
+              }}>
+                <LoadoutIcon name={row.ic} color={row.tint} size={42} r={12}/>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 16, fontWeight: 600, color: DP.ink, letterSpacing: -0.2 }}>{row.t}</div>
+                  <div style={{ fontSize: 13, color: DP.ink3, marginTop: 1 }}>{row.s}</div>
+                </div>
+                <Icon name="chevR" size={18} color={DP.ink4}/>
+              </div>
+            ))}
+          </Card>
+        </div>
+      </div>
+
+      <div style={{
+        position: 'absolute', bottom: 100, right: 18, zIndex: 30, width: 56, height: 56, borderRadius: 100,
+        background: DP.orange, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        boxShadow: '0 10px 24px rgba(255,107,44,0.45)', border: '3px solid #fff',
+      }}>
+        <Icon name="plus" size={26} stroke={2.6} color="#fff"/>
+      </div>
+      <TabBar active="today"/>
+    </Phone>
+  );
+};
+
+// 2·2 Walk-Out Checklist
+const Screen_Checklist = () => {
+  const groups = [
+    { label: 'Essentials', sub: 'Always with you', items: [
+      { name: 'Keys', icon: 'key', done: true, always: true },
+      { name: 'Wallet', icon: 'wallet', done: true, always: true },
+      { name: 'Phone', icon: 'briefcase', done: true, always: true },
+    ]},
+    { label: 'Gym kit', sub: '6 items for Tue', items: [
+      { name: 'Gym Shoes', icon: 'shoe', done: true },
+      { name: 'Water Bottle', icon: 'water', done: true },
+      { name: 'Towel', icon: 'briefcase', done: false, swipeHint: true },
+      { name: 'Protein Shake', icon: 'water', done: false, hi: true, why: 'Forgot last Tuesday — driving back cost 20 min' },
+    ]},
+    { label: 'Optional', sub: 'Tap if needed', items: [
+      { name: 'AirPods', icon: 'headphones', done: false, optional: true },
+      { name: 'Lock Combo', icon: 'key', done: false, optional: true },
+    ]},
+  ];
+  const all = groups.flatMap(g => g.items);
+  const done = all.filter(i => i.done && !i.optional).length;
+  const total = all.filter(i => !i.optional).length;
+  const pct = Math.round(done / total * 100);
+  const ready = pct === 100;
+
+  return (
+    <Phone bg={DP.bg}>
+      <div style={{ paddingTop: 54, height: '100%', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ padding: '8px 18px 10px', display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ width: 36, height: 36, borderRadius: 100, background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: DP.shadowSoft }}>
+            <Icon name="chevL" size={20} color={DP.ink}/>
+          </div>
+          <div style={{ flex: 1, textAlign: 'center' }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: DP.orange, letterSpacing: 0.5, textTransform: 'uppercase' }}>
+              Walk-out check · 5:30 PM
+            </div>
+            <div style={{ fontFamily: DP.fontRound, fontSize: 18, fontWeight: 700, color: DP.ink, letterSpacing: -0.3 }}>
+              Gym Day Loadout
+            </div>
+          </div>
+          <div style={{ width: 36, height: 36, borderRadius: 100, background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: DP.shadowSoft, color: DP.ink2 }}>
+            <Icon name="close" size={20}/>
+          </div>
+        </div>
+
+        <div style={{ padding: '0 22px 14px', display: 'flex', alignItems: 'center', gap: 14 }}>
+          <div style={{ position: 'relative', width: 64, height: 64, flexShrink: 0 }}>
+            <svg width="64" height="64" viewBox="0 0 64 64">
+              <circle cx="32" cy="32" r="28" fill="none" stroke={DP.bgGrouped} strokeWidth="6"/>
+              <circle cx="32" cy="32" r="28" fill="none" stroke={DP.orange} strokeWidth="6"
+                strokeLinecap="round" strokeDasharray={`${2 * Math.PI * 28 * pct / 100} ${2 * Math.PI * 28}`}
+                transform="rotate(-90 32 32)"/>
+            </svg>
+            <div style={{
+              position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontFamily: DP.fontRound, fontWeight: 800, color: DP.orange, fontSize: 16, letterSpacing: -0.3,
+            }}>{pct}%</div>
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontFamily: DP.fontRound, fontSize: 18, fontWeight: 700, color: DP.ink, letterSpacing: -0.3 }}>
+              {ready ? "You're ready" : `${total - done} item${total-done===1?'':'s'} to pack`}
+            </div>
+            <div style={{ fontSize: 12.5, color: DP.ink3, marginTop: 2 }}>
+              {ready ? 'Have a great workout 💪' : "Take your time — we'll wait"}
+            </div>
+          </div>
+          <div style={{ width: 38, height: 38, borderRadius: 100, background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: DP.shadowSoft, color: DP.ink2 }}>
+            <Icon name="search" size={18}/>
+          </div>
+        </div>
+
+        <div style={{ flex: 1, overflow: 'auto', padding: '0 16px 12px' }}>
+          {groups.map((g, gi) => (
+            <div key={gi} style={{ marginBottom: gi < groups.length - 1 ? 14 : 0 }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', padding: '6px 6px 8px' }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+                  <div style={{ fontFamily: DP.font, fontSize: 13, fontWeight: 700, color: DP.ink, letterSpacing: 0.2 }}>{g.label}</div>
+                  <div style={{ fontSize: 11.5, color: DP.ink3, fontWeight: 500 }}>{g.sub}</div>
+                </div>
+                <div style={{ fontSize: 11.5, color: DP.ink3, fontWeight: 600 }}>
+                  {g.items.filter(i => i.done).length}/{g.items.length}
+                </div>
+              </div>
+              <Card padding="0">
+                {g.items.map((it, i) => (
+                  <React.Fragment key={i}>
+                    <div style={{
+                      padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12,
+                      background: it.hi && !it.done ? '#FFF7F4' : 'transparent',
+                      position: 'relative', overflow: 'hidden',
+                    }}>
+                      {it.swipeHint && (
+                        <div style={{
+                          position: 'absolute', right: -2, top: 0, bottom: 0, width: 88,
+                          background: DP.green, display: 'flex', alignItems: 'center',
+                          justifyContent: 'flex-start', paddingLeft: 14, color: '#fff',
+                          fontSize: 13, fontWeight: 700, opacity: 0.18,
+                        }}>
+                          <Icon name="check" size={16} stroke={3} color="#fff"/>
+                          <span style={{ marginLeft: 6 }}>Pack</span>
+                        </div>
+                      )}
+                      <Check checked={it.done} size={26} color={DP.green}/>
+                      <div style={{
+                        width: 34, height: 34, borderRadius: 9,
+                        background: it.done ? DP.greenSoft : (it.hi ? DP.redSoft : DP.bgGrouped),
+                        color: it.done ? DP.green : (it.hi ? DP.red : DP.ink2),
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                      }}>
+                        <Icon name={it.icon} size={18} stroke={1.9}/>
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <div style={{
+                            fontSize: 16, fontWeight: 600, letterSpacing: -0.2,
+                            color: it.done ? DP.ink3 : DP.ink,
+                            textDecoration: it.done ? 'line-through' : 'none',
+                            textDecorationColor: DP.ink4,
+                          }}>{it.name}</div>
+                          {it.always && <Pill bg={DP.bgGrouped}>Always</Pill>}
+                          {it.optional && <Pill bg={DP.bgGrouped}>Optional</Pill>}
+                          {it.hi && !it.done && <Pill bg={DP.redSoft} color={DP.red}>Don't forget</Pill>}
+                        </div>
+                        {it.why && (
+                          <div style={{ fontSize: 11.5, color: DP.red, marginTop: 2, fontWeight: 500, lineHeight: 1.35 }}>
+                            {it.why}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    {i < g.items.length - 1 && <div style={{ height: 1, background: DP.divider, marginLeft: 56 }}/>}
+                  </React.Fragment>
+                ))}
+              </Card>
+            </div>
+          ))}
+
+          <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
+            <div style={{
+              flex: 1, padding: 12, borderRadius: 14, background: '#fff', boxShadow: DP.shadowSoft,
+              display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, fontWeight: 600, color: DP.ink2,
+              border: `1px dashed ${DP.ink4}`,
+            }}>
+              <div style={{ color: DP.orange }}><Icon name="sparkle" size={18}/></div> Voice add
+            </div>
+            <div style={{
+              flex: 1, padding: 12, borderRadius: 14, background: '#fff', boxShadow: DP.shadowSoft,
+              display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, fontWeight: 600, color: DP.ink2,
+              border: `1px dashed ${DP.ink4}`,
+            }}>
+              <div style={{ color: DP.orange }}><Icon name="search" size={18}/></div> Scan item
+            </div>
+          </div>
+        </div>
+
+        <div style={{
+          padding: '10px 18px 36px',
+          background: 'linear-gradient(180deg, rgba(247,245,242,0), rgba(247,245,242,0.96) 30%)',
+        }}>
+          {ready ? (
+            <PrimaryButton color={DP.green}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                All Clear — Let's Go <Icon name="arrow" size={18} stroke={2.2} color="#fff"/>
+              </span>
+            </PrimaryButton>
+          ) : (
+            <div style={{ display: 'flex', gap: 10 }}>
+              <SecondaryButton style={{ flex: 1 }}>I'll skip the rest</SecondaryButton>
+              <PrimaryButton style={{ flex: 1.4 }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>Pack {total - done} more</span>
+              </PrimaryButton>
+            </div>
+          )}
+        </div>
+      </div>
+    </Phone>
+  );
+};
+
+// 2·3 Loadouts list
+const Screen_LoadoutList = () => {
+  const loadouts = [
+    { name: 'School Day', sub: 'Mon · Wed · Fri', items: 8, ic: 'book', tint: DP.orange, active: true },
+    { name: 'Gym Day', sub: 'Tue · Thu · Sat', items: 6, ic: 'dumbbell', tint: '#7C5BFF' },
+    { name: 'Work Day', sub: 'Daily · 9 AM', items: 9, ic: 'briefcase', tint: '#0A84FF' },
+    { name: 'Travel', sub: 'Manual · 14 items', items: 14, ic: 'plane', tint: '#19B5A4' },
+    { name: 'Rainy Day', sub: 'Auto · Weather', items: 3, ic: 'umbrella', tint: '#5E81F4' },
+  ];
+  return (
+    <Phone>
+      <div style={{ paddingTop: 54, height: '100%', overflow: 'auto', paddingBottom: 110 }}>
+        <div style={{ padding: '14px 22px 8px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: DP.ink3, letterSpacing: 0.3, textTransform: 'uppercase' }}>
+              5 profiles
+            </div>
+            <div style={{ fontFamily: DP.fontRound, fontSize: 32, fontWeight: 700, letterSpacing: -0.8, marginTop: 4 }}>
+              Loadouts
+            </div>
+          </div>
+          <div style={{ width: 40, height: 40, borderRadius: 100, background: DP.orange, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 6px 16px rgba(255,107,44,0.35)' }}>
+            <Icon name="plus" size={22} stroke={2.4} color="#fff"/>
+          </div>
+        </div>
+        <div style={{ padding: '10px 18px 4px' }}>
+          <div style={{ background: '#fff', borderRadius: 14, padding: '11px 14px', display: 'flex', alignItems: 'center', gap: 10, color: DP.ink3, boxShadow: DP.shadowSoft, fontSize: 15 }}>
+            <Icon name="search" size={18} color={DP.ink3}/><span>Search loadouts &amp; items</span>
+          </div>
+        </div>
+        <div style={{ padding: '14px 18px 0' }}>
+          {loadouts.map((lo, i) => (
+            <div key={i} style={{
+              background: '#fff', borderRadius: DP.rXl, padding: 18, boxShadow: DP.shadowSoft, marginBottom: 12,
+              border: lo.active ? `1.5px solid ${DP.orange}` : '1.5px solid transparent',
+              position: 'relative', overflow: 'hidden',
+            }}>
+              {lo.active && (
+                <div style={{ position: 'absolute', top: 12, right: 14, background: DP.orange, color: '#fff', fontSize: 10, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', padding: '4px 8px', borderRadius: 100 }}>
+                  Today
+                </div>
+              )}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                <LoadoutIcon name={lo.ic} color={lo.tint} size={56} r={16}/>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontFamily: DP.fontRound, fontSize: 20, fontWeight: 700, color: DP.ink, letterSpacing: -0.3 }}>{lo.name}</div>
+                  <div style={{ fontSize: 13, color: DP.ink3, marginTop: 2 }}>{lo.sub}</div>
+                </div>
+              </div>
+              <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${DP.divider}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                  {[1,2,3].map(k => (
+                    <div key={k} style={{ width: 26, height: 26, borderRadius: 8, background: DP.bgGrouped, color: DP.ink2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Icon name={['water','laptop','key'][k-1]} size={14} stroke={1.9}/>
+                    </div>
+                  ))}
+                  <div style={{ fontSize: 12, fontWeight: 600, color: DP.ink3, marginLeft: 4 }}>+{lo.items - 3} more</div>
+                </div>
+                <Icon name="chevR" size={18} color={DP.ink4}/>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <TabBar active="loadouts"/>
+    </Phone>
+  );
+};
+
+// 2·4 Loadout Detail
+const Screen_LoadoutDetail = () => {
+  const items = [
+    { name: 'Gym Shoes', icon: 'shoe', recurring: true },
+    { name: 'Water Bottle', icon: 'water', recurring: true },
+    { name: 'Towel', icon: 'briefcase', recurring: true },
+    { name: 'Protein Shake', icon: 'water', recurring: false },
+    { name: 'AirPods', icon: 'headphones', recurring: true },
+    { name: 'Lock Combo', icon: 'key', recurring: false },
+  ];
+  return (
+    <Phone>
+      <div style={{ paddingTop: 54, height: '100%', overflow: 'auto', paddingBottom: 30 }}>
+        <div style={{ padding: '12px 18px 22px', background: 'linear-gradient(180deg, #F2EAFF 0%, rgba(247,245,242,0) 100%)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+            <div style={{ width: 36, height: 36, borderRadius: 100, background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: DP.shadowSoft }}>
+              <Icon name="chevL" size={20} color={DP.ink}/>
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <div style={{ width: 36, height: 36, borderRadius: 100, background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: DP.shadowSoft }}>
+                <Icon name="edit" size={18} color={DP.ink2}/>
+              </div>
+              <div style={{ width: 36, height: 36, borderRadius: 100, background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: DP.shadowSoft, fontFamily: DP.fontRound, fontWeight: 700, color: DP.ink2 }}>···</div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <LoadoutIcon name="dumbbell" color="#7C5BFF" size={64} r={18}/>
+            <div>
+              <div style={{ fontFamily: DP.fontRound, fontSize: 28, fontWeight: 700, letterSpacing: -0.6 }}>Gym Day</div>
+              <div style={{ fontSize: 13, color: DP.ink3, marginTop: 4 }}>6 items · Tue, Thu, Sat · 5:30 PM</div>
+            </div>
+          </div>
+        </div>
+
+        <div style={{ padding: '0 18px' }}>
+          <Card padding="0">
+            <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ width: 34, height: 34, borderRadius: 9, background: DP.orangeSoft, color: DP.orangeDeep, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Icon name="calendar" size={18} stroke={2}/>
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 15, fontWeight: 600 }}>Recurring days</div>
+                <div style={{ fontSize: 13, color: DP.ink3, marginTop: 1 }}>Tue · Thu · Sat</div>
+              </div>
+              <Icon name="chevR" size={18} color={DP.ink4}/>
+            </div>
+            <div style={{ height: 1, background: DP.divider, margin: '0 16px' }}/>
+            <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ width: 34, height: 34, borderRadius: 9, background: DP.orangeSoft, color: DP.orangeDeep, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Icon name="bell" size={18} stroke={2}/>
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 15, fontWeight: 600 }}>Walk-out reminder</div>
+                <div style={{ fontSize: 13, color: DP.ink3, marginTop: 1 }}>5:30 PM at Home</div>
+              </div>
+              <Switch on={true}/>
+            </div>
+          </Card>
+        </div>
+
+        <div style={{ padding: '24px 22px 8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <SectionLabel style={{ marginBottom: 0 }}>Items · 6</SectionLabel>
+          <div style={{ fontSize: 13, fontWeight: 600, color: DP.orange }}>+ Add item</div>
+        </div>
+
+        <div style={{ padding: '0 18px' }}>
+          <Card padding="0">
+            {items.map((it, i) => (
+              <React.Fragment key={i}>
+                <div style={{ padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{
+                    width: 36, height: 36, borderRadius: 10,
+                    background: it.recurring ? DP.orangeSoft : DP.bgGrouped,
+                    color: it.recurring ? DP.orangeDeep : DP.ink2,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                  }}>
+                    <Icon name={it.icon} size={18} stroke={1.9}/>
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 16, fontWeight: 600, color: DP.ink, letterSpacing: -0.2 }}>{it.name}</div>
+                    <div style={{ fontSize: 12, color: DP.ink3, marginTop: 1 }}>
+                      {it.recurring ? 'Repeats every gym day' : 'Add manually'}
+                    </div>
+                  </div>
+                  <Switch on={it.recurring}/>
+                </div>
+                {i < items.length - 1 && <div style={{ height: 1, background: DP.divider, marginLeft: 60 }}/>}
+              </React.Fragment>
+            ))}
+          </Card>
+
+          <div style={{ marginTop: 18, padding: '14px 16px', background: '#fff', borderRadius: 16, boxShadow: DP.shadowSoft, display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ width: 34, height: 34, borderRadius: 9, background: DP.redSoft, color: DP.red, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Icon name="trash" size={18} stroke={2}/>
+            </div>
+            <div style={{ fontSize: 15, fontWeight: 600, color: DP.red }}>Delete loadout</div>
+          </div>
+        </div>
+      </div>
+    </Phone>
+  );
+};
+
+// 2·5 Add / Edit Item modal
+const Screen_AddItem = () => {
+  const iconChoices = ['water','headphones','book','laptop','key','wallet','shoe','umbrella','toothbrush','briefcase','dumbbell','plane'];
+  return (
+    <Phone>
+      <div style={{ position: 'absolute', inset: 0, background: '#000', opacity: 0.32, zIndex: 5 }}/>
+      <div style={{
+        position: 'absolute', top: 54, left: 0, right: 0, bottom: 0, padding: '0 18px 30px',
+        display: 'flex', alignItems: 'flex-end', zIndex: 10,
+      }}>
+        <div style={{
+          width: '100%', background: DP.bg, borderRadius: 28, padding: '12px 20px 24px',
+          boxShadow: '0 -10px 40px rgba(0,0,0,0.18)', maxHeight: '92%', overflow: 'hidden',
+        }}>
+          <div style={{ width: 40, height: 5, borderRadius: 100, background: DP.ink4, margin: '4px auto 16px' }}/>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+            <div style={{ fontSize: 15, color: DP.ink3, fontWeight: 600 }}>Cancel</div>
+            <div style={{ fontFamily: DP.fontRound, fontSize: 17, fontWeight: 700, color: DP.ink, letterSpacing: -0.2 }}>New Item</div>
+            <div style={{ fontSize: 15, color: DP.orange, fontWeight: 700 }}>Save</div>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, marginBottom: 18 }}>
+            <div style={{
+              width: 76, height: 76, borderRadius: 22, background: DP.orangeSoft, color: DP.orange,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: DP.shadowSoft,
+            }}>
+              <Icon name="water" size={40} stroke={1.9}/>
+            </div>
+            <div style={{ background: '#fff', borderRadius: 14, padding: '14px 16px', width: '100%', boxShadow: DP.shadowSoft }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: DP.ink3, letterSpacing: 0.4, textTransform: 'uppercase' }}>Item name</div>
+              <div style={{ fontSize: 19, fontWeight: 600, color: DP.ink, marginTop: 2, letterSpacing: -0.2 }}>
+                Water Bottle
+                <span style={{ display: 'inline-block', width: 2, height: 22, background: DP.orange, marginLeft: 2, verticalAlign: 'middle', borderRadius: 1 }}/>
+              </div>
+            </div>
+          </div>
+          <SectionLabel>Choose an icon</SectionLabel>
+          <div style={{ background: '#fff', borderRadius: 16, padding: 12, boxShadow: DP.shadowSoft, display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 8 }}>
+            {iconChoices.map((ic, i) => {
+              const sel = i === 0;
+              return (
+                <div key={i} style={{
+                  aspectRatio: '1/1', borderRadius: 11,
+                  background: sel ? DP.orange : DP.bgGrouped,
+                  color: sel ? '#fff' : DP.ink2,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  border: sel ? `1.5px solid ${DP.orangeDeep}` : '1.5px solid transparent',
+                }}>
+                  <Icon name={ic} size={20} stroke={1.9}/>
+                </div>
+              );
+            })}
+          </div>
+          <div style={{ marginTop: 18 }}>
+            <SectionLabel>Settings</SectionLabel>
+            <Card padding="0">
+              <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 15, fontWeight: 600 }}>Recurring</div>
+                  <div style={{ fontSize: 12, color: DP.ink3, marginTop: 1 }}>Repeats every gym day</div>
+                </div>
+                <Switch on={true}/>
+              </div>
+              <div style={{ height: 1, background: DP.divider, margin: '0 16px' }}/>
+              <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 15, fontWeight: 600 }}>High priority</div>
+                  <div style={{ fontSize: 12, color: DP.ink3, marginTop: 1 }}>Highlight if forgotten</div>
+                </div>
+                <Switch on={false}/>
+              </div>
+              <div style={{ height: 1, background: DP.divider, margin: '0 16px' }}/>
+              <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 15, fontWeight: 600 }}>Note</div>
+                  <div style={{ fontSize: 12, color: DP.ink3, marginTop: 1 }}>Optional details</div>
+                </div>
+                <Icon name="chevR" size={18} color={DP.ink4}/>
+              </div>
+            </Card>
+          </div>
+        </div>
+      </div>
+    </Phone>
+  );
+};
+
+// 3·1 Lock screen push
+const Screen_LockNotif = () => (
+  <Phone dark={true} bg="#000">
+    <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(120% 80% at 50% 20%, #2a1810 0%, #000 70%)' }}/>
+    <div style={{ position: 'absolute', top: 90, left: 0, right: 0, textAlign: 'center', color: '#fff', zIndex: 5 }}>
+      <div style={{ fontSize: 14, opacity: 0.75, fontWeight: 500, letterSpacing: 0.2 }}>Tuesday, April 28</div>
+      <div style={{ fontFamily: DP.fontRound, fontSize: 96, fontWeight: 300, letterSpacing: -2, lineHeight: 1, marginTop: 2 }}>9:41</div>
+    </div>
+    <div style={{ position: 'absolute', top: 76, left: '50%', transform: 'translateX(-50%)', color: 'rgba(255,255,255,0.72)' }}>
+      <svg width="14" height="18" viewBox="0 0 14 18" fill="none">
+        <rect x="1.5" y="7.5" width="11" height="9" rx="2" stroke="currentColor" strokeWidth="1.4"/>
+        <path d="M4 7.5V5a3 3 0 116 0v2.5" stroke="currentColor" strokeWidth="1.4" fill="none"/>
+      </svg>
+    </div>
+    <div style={{
+      position: 'absolute', top: 280, left: 12, right: 12, zIndex: 5,
+      background: 'rgba(50,50,55,0.55)',
+      backdropFilter: 'blur(30px) saturate(180%)', WebkitBackdropFilter: 'blur(30px) saturate(180%)',
+      borderRadius: 22, overflow: 'hidden', border: '0.5px solid rgba(255,255,255,0.12)',
+    }}>
+      <div style={{ padding: '14px 16px 16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+          <Monogram size={32} radius={8}/>
+          <div style={{ flex: 1, fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.85)', textTransform: 'uppercase', letterSpacing: 0.5 }}>DayPack</div>
+          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)' }}>now</div>
+        </div>
+        <div style={{ fontSize: 15.5, fontWeight: 700, color: '#fff', letterSpacing: -0.2, marginBottom: 3 }}>
+          Did you pack everything? 🎒
+        </div>
+        <div style={{ fontSize: 14.5, color: 'rgba(255,255,255,0.85)', lineHeight: 1.4 }}>
+          You just left home — open your Gym Day checklist to make sure.
+        </div>
+      </div>
+      <div style={{ display: 'flex', borderTop: '0.5px solid rgba(255,255,255,0.12)' }}>
+        <div style={{ flex: 1, padding: '13px 0', textAlign: 'center', background: DP.orange, color: '#fff', fontSize: 15, fontWeight: 600 }}>Open Checklist</div>
+        <div style={{ flex: 1, padding: '13px 0', textAlign: 'center', color: 'rgba(255,255,255,0.85)', fontSize: 15, fontWeight: 500, borderLeft: '0.5px solid rgba(255,255,255,0.12)' }}>Dismiss</div>
+      </div>
+    </div>
+    <div style={{ position: 'absolute', bottom: 80, left: 0, right: 0, display: 'flex', justifyContent: 'space-between', padding: '0 36px' }}>
+      {[0,1].map(i => (
+        <div key={i} style={{ width: 50, height: 50, borderRadius: 100, background: 'rgba(255,255,255,0.16)', backdropFilter: 'blur(12px)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+          <Icon name={i === 0 ? 'sun' : 'search'} size={22} color="#fff"/>
+        </div>
+      ))}
+    </div>
+  </Phone>
+);
+
+// 3·3 Perfect Departure
+const Screen_PerfectDeparture = () => {
+  const week = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const status = [true, true, true, true, true, false, false];
+  const todayIdx = 4;
+  return (
+    <Phone>
+      <div style={{ paddingTop: 54, height: '100%', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ position: 'absolute', top: 54, left: 0, right: 0, height: 330, background: 'radial-gradient(120% 80% at 50% 0%, rgba(255,107,44,0.18), rgba(255,107,44,0) 70%)', pointerEvents: 'none' }}/>
+        {[
+          { l: 12, t: 90, c: DP.orange, r: 8 },
+          { l: 60, t: 130, c: DP.green, r: 6 },
+          { l: 320, t: 100, c: DP.orange, r: 6 },
+          { l: 280, t: 160, c: '#7C5BFF', r: 7 },
+          { l: 30, t: 220, c: '#FFCA3A', r: 6 },
+          { l: 340, t: 240, c: DP.green, r: 7 },
+        ].map((d, i) => (
+          <div key={i} style={{ position: 'absolute', left: d.l, top: d.t, width: d.r*2, height: d.r*2, borderRadius: d.r, background: d.c, opacity: 0.55, transform: `rotate(${i*30}deg)` }}/>
+        ))}
+        <div style={{ padding: '14px 22px 8px', textAlign: 'right' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', borderRadius: 100, padding: '7px 12px', boxShadow: DP.shadowSoft, color: DP.ink2, fontSize: 13, fontWeight: 600 }}>
+            <Icon name="close" size={14} color={DP.ink2}/> Close
+          </div>
+        </div>
+        <div style={{ padding: '20px 28px 0', textAlign: 'center', position: 'relative', zIndex: 2 }}>
+          <div style={{ width: 96, height: 96, borderRadius: 100, background: DP.orange, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 12px 32px rgba(255,107,44,0.35)', border: '4px solid #fff' }}>
+            <Icon name="flame" size={50} stroke={2} color="#fff"/>
+          </div>
+          <div style={{ fontFamily: DP.fontRound, fontSize: 32, fontWeight: 800, letterSpacing: -0.8, marginTop: 18, color: DP.ink }}>Perfect Departure!</div>
+          <div style={{ fontSize: 15, color: DP.ink3, marginTop: 6, lineHeight: 1.45 }}>
+            You left with everything today. Nice — that's a streak you'll want to keep.
+          </div>
+        </div>
+        <div style={{ padding: '24px 22px 0', position: 'relative', zIndex: 2 }}>
+          <div style={{ background: DP.orangeMuted, borderRadius: 20, padding: 18, border: `1px solid ${DP.orangeSoft}`, display: 'flex', alignItems: 'center', gap: 14 }}>
+            <div style={{ width: 56, height: 56, borderRadius: 16, background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: DP.orange, boxShadow: DP.shadowSoft }}>
+              <Icon name="flame" size={28} stroke={2} color={DP.orange}/>
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: DP.orangeDeep, letterSpacing: 0.4, textTransform: 'uppercase' }}>Day streak</div>
+              <div style={{ fontFamily: DP.fontRound, fontSize: 36, fontWeight: 800, color: DP.ink, letterSpacing: -0.8, lineHeight: 1 }}>
+                13 <span style={{ fontSize: 15, color: DP.ink3, fontWeight: 600 }}>days</span>
+              </div>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: 11, color: DP.ink3, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.4 }}>Best</div>
+              <div style={{ fontFamily: DP.fontRound, fontSize: 18, fontWeight: 700, color: DP.ink2 }}>21</div>
+            </div>
+          </div>
+        </div>
+        <div style={{ padding: '20px 22px 0', position: 'relative', zIndex: 2 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: DP.ink3, letterSpacing: 0.4, textTransform: 'uppercase', marginBottom: 10 }}>This week</div>
+          <div style={{ background: '#fff', borderRadius: 18, padding: 14, display: 'flex', justifyContent: 'space-between', boxShadow: DP.shadowSoft }}>
+            {week.map((d, i) => {
+              const future = i > todayIdx;
+              const ok = status[i];
+              return (
+                <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, flex: 1 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: i === todayIdx ? DP.orange : DP.ink3, letterSpacing: 0.3, textTransform: 'uppercase' }}>{d}</div>
+                  {future ? (
+                    <div style={{ width: 32, height: 32, borderRadius: 100, background: DP.bgGrouped, border: `1.5px dashed ${DP.ink4}` }}/>
+                  ) : ok ? (
+                    <Check checked={true} size={32} color={DP.green}/>
+                  ) : (
+                    <div style={{ width: 32, height: 32, borderRadius: 100, background: DP.bgGrouped, border: `1.5px solid ${DP.ink4}` }}/>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        <div style={{ flex: 1 }}/>
+        <div style={{ padding: '12px 22px 30px' }}><PrimaryButton>Close</PrimaryButton></div>
+      </div>
+    </Phone>
+  );
+};
+
+// 4·1 Forgot Something
+const Screen_ForgotIt = () => (
+  <Phone>
+    <div style={{ paddingTop: 54, height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ padding: '8px 18px 4px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ width: 36, height: 36, borderRadius: 100, background: '#fff', boxShadow: DP.shadowSoft, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <Icon name="chevL" size={20}/>
+        </div>
+        <div style={{ fontSize: 14, fontWeight: 600, color: DP.ink3 }}>Cancel</div>
+      </div>
+      <div style={{ padding: '18px 26px 8px' }}>
+        <div style={{ fontFamily: DP.fontRound, fontSize: 28, fontWeight: 700, letterSpacing: -0.6 }}>Did you forget something?</div>
+        <div style={{ fontSize: 14.5, color: DP.ink3, marginTop: 6, lineHeight: 1.45 }}>
+          Tell us what so we can remember it for next time. No judgment — these things happen.
+        </div>
+      </div>
+      <div style={{ padding: '14px 18px 0', flex: 1 }}>
+        <SectionLabel>Most likely</SectionLabel>
+        {[
+          { ic: 'water', t: 'Water Bottle', s: 'Last packed yesterday', tint: '#19B5A4' },
+          { ic: 'headphones', t: 'AirPods', s: 'Often skipped', tint: DP.ink2 },
+          { ic: 'briefcase', t: 'Charger', s: 'Battery 14% now', tint: DP.amber },
+        ].map((row, i) => (
+          <div key={i} style={{
+            background: '#fff', borderRadius: 14, padding: '12px 14px', marginBottom: 8,
+            boxShadow: DP.shadowSoft, display: 'flex', alignItems: 'center', gap: 12,
+          }}>
+            <div style={{ width: 38, height: 38, borderRadius: 10, background: `${row.tint}1A`, color: row.tint, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Icon name={row.ic} size={20} stroke={1.9}/>
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 16, fontWeight: 600, color: DP.ink, letterSpacing: -0.2 }}>{row.t}</div>
+              <div style={{ fontSize: 12, color: DP.ink3, marginTop: 1 }}>{row.s}</div>
+            </div>
+            <div style={{ padding: '6px 12px', borderRadius: 100, background: DP.orangeSoft, color: DP.orangeDeep, fontSize: 13, fontWeight: 700 }}>That's it</div>
+          </div>
+        ))}
+        <SectionLabel style={{ marginTop: 18 }}>Or type it</SectionLabel>
+        <div style={{ background: '#fff', borderRadius: 14, padding: '12px 14px', boxShadow: DP.shadowSoft, display: 'flex', alignItems: 'center', gap: 10, color: DP.ink3 }}>
+          <Icon name="edit" size={18} color={DP.ink3}/>
+          <div style={{ fontSize: 15 }}>What did you forget?</div>
+        </div>
+        <div style={{
+          marginTop: 18, padding: '14px 16px', borderRadius: 16,
+          background: DP.orangeMuted, border: `1px solid ${DP.orangeSoft}`,
+          display: 'flex', gap: 12, alignItems: 'flex-start',
+        }}>
+          <div style={{ color: DP.orange, paddingTop: 2 }}><Icon name="sparkle" size={20}/></div>
+          <div>
+            <div style={{ fontSize: 13.5, fontWeight: 700, color: DP.orangeDeep, marginBottom: 2 }}>We'll remember this</div>
+            <div style={{ fontSize: 12.5, color: DP.ink2, lineHeight: 1.4 }}>
+              Next gym day, this item will be marked as <strong>high priority</strong> and bumped to the top of your checklist.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style={{ padding: '14px 18px 36px' }}><PrimaryButton>Save &amp; continue</PrimaryButton></div>
+    </div>
+  </Phone>
+);
+
+// 4·2 Insights / Stats
+const Screen_Stats = () => {
+  const days = Array.from({ length: 30 }, (_, i) => {
+    const r = Math.sin(i * 1.3) + Math.cos(i * 0.7);
+    return r > 0.5 ? 'perfect' : r > -0.4 ? 'ok' : i % 7 === 0 ? 'skip' : 'missed';
+  });
+  const palette = { perfect: DP.green, ok: '#A8D9B7', missed: DP.orangeSoft, skip: DP.bgGrouped };
+  return (
+    <Phone>
+      <div style={{ paddingTop: 54, height: '100%', overflow: 'auto', paddingBottom: 110 }}>
+        <div style={{ padding: '10px 22px 12px' }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: DP.ink3, letterSpacing: 0.3, textTransform: 'uppercase' }}>April 2026</div>
+          <div style={{ fontFamily: DP.fontRound, fontSize: 30, fontWeight: 700, letterSpacing: -0.7, marginTop: 2 }}>Insights</div>
+        </div>
+        <div style={{ padding: '0 18px' }}>
+          <div style={{
+            background: 'linear-gradient(135deg, #FF8A4C 0%, #FF6B2C 60%, #E8531A 100%)',
+            borderRadius: 24, padding: 18, color: '#fff',
+            boxShadow: '0 10px 30px rgba(255,107,44,0.32)', position: 'relative', overflow: 'hidden',
+          }}>
+            <div style={{ position: 'absolute', right: -30, top: -20, width: 160, height: 160, borderRadius: 100, background: 'rgba(255,255,255,0.10)' }}/>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 12, fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase', opacity: 0.92 }}>
+              <Icon name="flame" size={16} color="#fff" stroke={2.2}/> Current streak
+            </div>
+            <div style={{ fontFamily: DP.fontRound, fontSize: 64, fontWeight: 800, letterSpacing: -2, lineHeight: 1, marginTop: 6 }}>
+              13<span style={{ fontSize: 22, fontWeight: 700, marginLeft: 6, opacity: 0.9 }}>days</span>
+            </div>
+            <div style={{ fontSize: 13, opacity: 0.92, marginTop: 6 }}>8 days from your all-time best (21).</div>
+            <div style={{ display: 'flex', gap: 4, marginTop: 14 }}>
+              {Array.from({ length: 13 }).map((_, i) => (
+                <div key={i} style={{ flex: 1, height: 6, borderRadius: 100, background: 'rgba(255,255,255,0.85)' }}/>
+              ))}
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} style={{ flex: 1, height: 6, borderRadius: 100, background: 'rgba(255,255,255,0.25)' }}/>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div style={{ padding: '20px 18px 0' }}>
+          <Card padding="16px 16px 14px">
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
+              <div style={{ fontFamily: DP.fontRound, fontSize: 16, fontWeight: 700, color: DP.ink, letterSpacing: -0.2 }}>Last 30 days</div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: DP.ink3 }}>26 perfect · 4 missed</div>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(15, 1fr)', gap: 4 }}>
+              {days.map((s, i) => (
+                <div key={i} style={{ aspectRatio: '1/1', borderRadius: 5, background: palette[s] }}/>
+              ))}
+            </div>
+            <div style={{ display: 'flex', gap: 14, marginTop: 12, fontSize: 11, color: DP.ink3 }}>
+              {[{ c: DP.green, t: 'Perfect' }, { c: '#A8D9B7', t: 'Mostly' }, { c: DP.orangeSoft, t: 'Missed' }, { c: DP.bgGrouped, t: 'Skipped' }].map((l, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <div style={{ width: 10, height: 10, borderRadius: 3, background: l.c }}/>
+                  <span style={{ fontWeight: 600 }}>{l.t}</span>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </div>
+        <div style={{ padding: '20px 22px 6px' }}><SectionLabel>Most forgotten</SectionLabel></div>
+        <div style={{ padding: '0 18px' }}>
+          <Card padding="0">
+            {[
+              { ic: 'water', t: 'Water Bottle', n: 4, tint: '#19B5A4' },
+              { ic: 'headphones', t: 'AirPods', n: 3, tint: DP.ink2 },
+              { ic: 'umbrella', t: 'Umbrella', n: 2, tint: '#5E81F4' },
+            ].map((r, i) => (
+              <React.Fragment key={i}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px' }}>
+                  <div style={{ width: 36, height: 36, borderRadius: 10, background: `${r.tint}1A`, color: r.tint, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Icon name={r.ic} size={18}/>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 15.5, fontWeight: 600 }}>{r.t}</div>
+                    <div style={{ fontSize: 12, color: DP.ink3, marginTop: 1 }}>Forgot {r.n}× this month</div>
+                  </div>
+                  <div style={{ width: 80, height: 6, background: DP.bgGrouped, borderRadius: 100, overflow: 'hidden' }}>
+                    <div style={{ width: `${r.n * 25}%`, height: '100%', background: DP.orange }}/>
+                  </div>
+                </div>
+                {i < 2 && <div style={{ height: 1, background: DP.divider, marginLeft: 56 }}/>}
+              </React.Fragment>
+            ))}
+          </Card>
+        </div>
+        <div style={{ padding: '20px 22px 6px' }}><SectionLabel>Loadout performance</SectionLabel></div>
+        <div style={{ padding: '0 18px' }}>
+          <Card padding="0">
+            {[
+              { ic: 'book', t: 'School Day', pct: 100, tint: DP.orange },
+              { ic: 'dumbbell', t: 'Gym Day', pct: 75, tint: '#7C5BFF' },
+              { ic: 'plane', t: 'Travel', pct: 92, tint: '#19B5A4' },
+            ].map((r, i) => (
+              <React.Fragment key={i}>
+                <div style={{ padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <LoadoutIcon name={r.ic} color={r.tint} size={36} r={10}/>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 15.5, fontWeight: 600 }}>{r.t}</div>
+                    <div style={{ marginTop: 6, height: 6, background: DP.bgGrouped, borderRadius: 100, overflow: 'hidden' }}>
+                      <div style={{ width: `${r.pct}%`, height: '100%', background: r.tint, borderRadius: 100 }}/>
+                    </div>
+                  </div>
+                  <div style={{ fontFamily: DP.fontRound, fontSize: 16, fontWeight: 700, color: DP.ink, minWidth: 38, textAlign: 'right' }}>{r.pct}%</div>
+                </div>
+                {i < 2 && <div style={{ height: 1, background: DP.divider, marginLeft: 56 }}/>}
+              </React.Fragment>
+            ))}
+          </Card>
+        </div>
+      </div>
+      <TabBar active="stats"/>
+    </Phone>
+  );
+};
+
+// 4·3 Trip Planner
+const Screen_Trip = () => (
+  <Phone>
+    <div style={{ paddingTop: 54, height: '100%', overflow: 'auto', paddingBottom: 100 }}>
+      <div style={{
+        margin: '8px 18px 0', borderRadius: 24, padding: 18,
+        background: 'linear-gradient(135deg, #4FA8FF 0%, #0A84FF 80%)',
+        color: '#fff', boxShadow: '0 12px 30px rgba(10,132,255,0.30)',
+        position: 'relative', overflow: 'hidden',
+      }}>
+        <div style={{ position: 'absolute', right: -20, top: -30, width: 160, height: 160, borderRadius: 100, background: 'rgba(255,255,255,0.12)' }}/>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Pill bg="rgba(255,255,255,0.22)" color="#fff">
+            <Icon name="plane" size={11} color="#fff" stroke={2}/> Trip · 3 days
+          </Pill>
+          <div style={{ width: 32, height: 32, borderRadius: 100, background: 'rgba(255,255,255,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+            <Icon name="edit" size={16} color="#fff" stroke={2}/>
+          </div>
+        </div>
+        <div style={{ fontFamily: DP.fontRound, fontSize: 26, fontWeight: 800, letterSpacing: -0.6, marginTop: 12 }}>NYC Weekend</div>
+        <div style={{ fontSize: 13, opacity: 0.92, marginTop: 2 }}>Sat May 2 → Mon May 4 · 14 items · 18°C, light rain</div>
+        <div style={{ marginTop: 14, background: 'rgba(255,255,255,0.18)', borderRadius: 100, padding: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <div style={{ flex: 0.42, height: 8, borderRadius: 100, background: '#fff' }}/>
+          <div style={{ flex: 0.58, height: 8, borderRadius: 100 }}/>
+          <div style={{ fontSize: 12, fontWeight: 700, padding: '0 8px' }}>6/14</div>
+        </div>
+      </div>
+      <div style={{ padding: '18px 18px 0' }}>
+        <div style={{ background: '#fff', borderRadius: 14, padding: 4, boxShadow: DP.shadowSoft, display: 'flex', gap: 4 }}>
+          {['Pre-trip', 'Day 1', 'Day 2', 'Day 3'].map((t, i) => (
+            <div key={i} style={{
+              flex: 1, padding: '8px 0', textAlign: 'center',
+              background: i === 1 ? DP.orange : 'transparent', color: i === 1 ? '#fff' : DP.ink2,
+              borderRadius: 10, fontSize: 12.5, fontWeight: 700, letterSpacing: -0.1,
+            }}>{t}</div>
+          ))}
+        </div>
+      </div>
+      <div style={{ padding: '16px 18px 0' }}>
+        <div style={{ padding: '12px 14px', borderRadius: 16, background: DP.orangeMuted, border: `1px solid ${DP.orangeSoft}`, display: 'flex', gap: 10, alignItems: 'center' }}>
+          <div style={{ color: DP.orange }}><Icon name="sparkle" size={20}/></div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: DP.orangeDeep }}>Built from your last NYC trip + weather</div>
+            <div style={{ fontSize: 11.5, color: DP.ink3, marginTop: 1 }}>Added: rain jacket, walking shoes. Removed: sunglasses.</div>
+          </div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: DP.orange }}>Why?</div>
+        </div>
+      </div>
+      <div style={{ padding: '14px 18px 6px' }}>
+        {[
+          { t: 'Carry-on', n: '4/5', items: ['laptop','headphones','book'] },
+          { t: 'Toiletries', n: '0/4', items: ['toothbrush','water'] },
+          { t: 'Outfit · Day 1', n: '2/3', items: ['shoe','briefcase'] },
+          { t: 'Tech', n: '0/2', items: ['briefcase','laptop'] },
+        ].map((c, i) => (
+          <div key={i} style={{
+            background: '#fff', borderRadius: 16, padding: '14px 16px', marginBottom: 10,
+            boxShadow: DP.shadowSoft, display: 'flex', alignItems: 'center', gap: 12,
+          }}>
+            <div style={{ width: 44, height: 44, borderRadius: 12, background: DP.bgGrouped, color: DP.ink2, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <Icon name={c.items[0]} size={20}/>
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 15.5, fontWeight: 700, color: DP.ink, letterSpacing: -0.2 }}>{c.t}</div>
+              <div style={{ marginTop: 6, height: 5, background: DP.bgGrouped, borderRadius: 100, overflow: 'hidden' }}>
+                <div style={{ width: c.n.split('/')[0] / c.n.split('/')[1] * 100 + '%', height: '100%', background: DP.orange }}/>
+              </div>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontFamily: DP.fontRound, fontSize: 14, fontWeight: 700, color: DP.ink2 }}>{c.n}</div>
+              <Icon name="chevR" size={16} color={DP.ink4}/>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+    <div style={{ position: 'absolute', bottom: 24, left: 18, right: 18, zIndex: 30 }}>
+      <PrimaryButton>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+          Pack for trip <Icon name="arrow" size={18} stroke={2.2} color="#fff"/>
+        </span>
+      </PrimaryButton>
+    </div>
+  </Phone>
+);
+
+// 4·4 Empty State
+const Screen_Empty = () => (
+  <Phone>
+    <div style={{ paddingTop: 54, height: '100%', display: 'flex', flexDirection: 'column', paddingBottom: 100 }}>
+      <div style={{ padding: '10px 22px 4px' }}>
+        <div style={{ fontFamily: DP.fontRound, fontSize: 30, fontWeight: 700, letterSpacing: -0.7 }}>Loadouts</div>
+      </div>
+      <div style={{ flex: 1, padding: '20px 24px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{
+          width: 110, height: 110, borderRadius: 32, background: '#fff',
+          boxShadow: DP.shadowSoft, border: `1.5px dashed ${DP.orange}`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', color: DP.orange, marginBottom: 24,
+        }}>
+          <Icon name="backpack" size={56} stroke={1.6} color={DP.orange}/>
+        </div>
+        <div style={{ fontFamily: DP.fontRound, fontSize: 22, fontWeight: 700, letterSpacing: -0.4, textAlign: 'center', color: DP.ink }}>No loadouts yet</div>
+        <div style={{ fontSize: 14.5, color: DP.ink3, marginTop: 8, textAlign: 'center', lineHeight: 1.45, padding: '0 12px' }}>
+          A loadout is a checklist for a kind of day. Start with a template — you can edit anything after.
+        </div>
+        <div style={{ width: '100%', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 24 }}>
+          {[
+            { t: 'School', ic: 'book', tint: DP.orange },
+            { t: 'Work', ic: 'briefcase', tint: '#0A84FF' },
+            { t: 'Gym', ic: 'dumbbell', tint: '#7C5BFF' },
+            { t: 'Travel', ic: 'plane', tint: '#19B5A4' },
+          ].map((p, i) => (
+            <div key={i} style={{ background: '#fff', borderRadius: 16, padding: 14, boxShadow: DP.shadowSoft, display: 'flex', alignItems: 'center', gap: 10 }}>
+              <LoadoutIcon name={p.ic} color={p.tint} size={36} r={10}/>
+              <div style={{ fontSize: 15, fontWeight: 700, color: DP.ink, letterSpacing: -0.2 }}>{p.t}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div style={{ padding: '14px 18px 36px' }}>
+        <PrimaryButton>Build my first loadout</PrimaryButton>
+        <TextButton color={DP.ink3}>Or import from a template</TextButton>
+      </div>
+      <TabBar active="loadouts"/>
+    </div>
+  </Phone>
+);
+
+/* ────────────── DESIGN CANVAS LAYOUT ────────────── */
+
+const FRAME_W = PHONE_W + 24;
+const FRAME_H = PHONE_H + 24;
+
+const Artboard = ({ label, children }) => (
+  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 10, width: FRAME_W }}>
+    <div style={{
+      fontFamily: '-apple-system, BlinkMacSystemFont, system-ui, sans-serif',
+      fontSize: 13, fontWeight: 600, color: 'rgba(60,50,40,0.78)', letterSpacing: -0.1,
+      padding: '4px 8px', background: 'rgba(255,255,255,0.55)',
+      borderRadius: 6, border: '1px solid rgba(60,50,40,0.08)',
+    }}>{label}</div>
+    <div className="dp-card" style={{ width: FRAME_W, height: FRAME_H, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      {children}
+    </div>
+  </div>
+);
+
+const Section = ({ id, title, subtitle, children }) => (
+  <section id={id} style={{ marginBottom: 88 }}>
+    <header style={{ marginBottom: 28, maxWidth: 760 }}>
+      <div style={{
+        fontFamily: '-apple-system, system-ui, sans-serif',
+        fontSize: 12, fontWeight: 700, color: 'rgba(60,50,40,0.5)',
+        letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 6,
+      }}>Section</div>
+      <h2 style={{
+        margin: 0, fontFamily: '"SF Pro Rounded", -apple-system, system-ui, sans-serif',
+        fontSize: 30, fontWeight: 700, color: 'rgba(40,30,20,0.92)', letterSpacing: -0.7,
+      }}>{title}</h2>
+      <p style={{
+        margin: '8px 0 0', fontSize: 15, fontWeight: 400, color: 'rgba(60,50,40,0.62)',
+        lineHeight: 1.5,
+      }}>{subtitle}</p>
+    </header>
+    <div className="dp-row">{children}</div>
+  </section>
+);
+
+const App = () => (
+  <div style={{
+    minHeight: '100vh', padding: '64px 56px 96px',
+    background: `
+      radial-gradient(1200px 600px at 10% -10%, rgba(255,107,44,0.06), transparent 60%),
+      radial-gradient(900px 500px at 95% 10%, rgba(124,91,255,0.05), transparent 60%),
+      #EFEAE3
+    `,
+    backgroundAttachment: 'fixed',
+  }}>
+    {/* Page header */}
+    <header style={{ maxWidth: 920, marginBottom: 64 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 22 }}>
+        <Monogram size={48} radius={13}/>
+        <div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: 'rgba(60,50,40,0.55)', letterSpacing: 1.2, textTransform: 'uppercase' }}>
+            Hi-fi iOS prototype
+          </div>
+          <div style={{
+            fontFamily: '"SF Pro Rounded", -apple-system, system-ui, sans-serif',
+            fontSize: 22, fontWeight: 700, color: 'rgba(30,20,10,0.92)', letterSpacing: -0.4, marginTop: 1,
+          }}>DayPack</div>
+        </div>
+      </div>
+      <h1 style={{
+        margin: 0, fontFamily: '"SF Pro Rounded", -apple-system, system-ui, sans-serif',
+        fontSize: 56, fontWeight: 800, color: '#1B1B1F', letterSpacing: -1.6, lineHeight: 1.04,
+      }}>
+        Daily-loadout checklist<br/>for students.
+      </h1>
+      <p style={{
+        margin: '20px 0 0', maxWidth: 640,
+        fontSize: 17, lineHeight: 1.55, color: 'rgba(60,50,40,0.7)',
+      }}>
+        Eighteen high-fidelity screens — onboarding, the at-home Today screen, the
+        full-screen walk-out flow, loadout management, and four UX-improvement screens
+        (forgot-it recovery, insights, trip planner, empty state). Soft warm
+        neutrals, an orange brand accent, SF Pro Rounded for display, SF Pro Text for UI.
+      </p>
+      <div style={{ marginTop: 28, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+        {['Onboarding · 6', 'Core App · 5', 'Walk-Out Flow · 3', 'UX Improvements · 4'].map((t, i) => (
+          <span key={i} style={{
+            display: 'inline-flex', alignItems: 'center', height: 28, padding: '0 12px', borderRadius: 100,
+            background: 'rgba(255,255,255,0.7)', border: '1px solid rgba(60,50,40,0.08)',
+            fontSize: 12, fontWeight: 600, color: 'rgba(60,50,40,0.78)', letterSpacing: 0.1,
+          }}>{t}</span>
+        ))}
+      </div>
+    </header>
+
+    <Section
+      id="onboarding"
+      title="1 · Onboarding Flow"
+      subtitle="First-run experience: welcome → home location → permission → first profile → items → all set."
+    >
+      <Artboard label="Welcome"><OB_Welcome/></Artboard>
+      <Artboard label="Set Home Location"><OB_Location/></Artboard>
+      <Artboard label="Location Permission"><OB_Permission/></Artboard>
+      <Artboard label="First Profile"><OB_FirstProfile/></Artboard>
+      <Artboard label="Add Items"><OB_AddItems/></Artboard>
+      <Artboard label="All Set"><OB_Done/></Artboard>
+    </Section>
+
+    <Section
+      id="core"
+      title="2 · Core App"
+      subtitle="Today screen, full-screen walk-out checklist, loadout list, detail, and the new-item modal."
+    >
+      <Artboard label="Today"><Screen_Today/></Artboard>
+      <Artboard label="Walk-Out Checklist"><Screen_Checklist/></Artboard>
+      <Artboard label="Loadouts"><Screen_LoadoutList/></Artboard>
+      <Artboard label="Loadout Detail"><Screen_LoadoutDetail/></Artboard>
+      <Artboard label="Add / Edit Item"><Screen_AddItem/></Artboard>
+    </Section>
+
+    <Section
+      id="walkout"
+      title="3 · Walk-Out Flow"
+      subtitle="Lock-screen nudge → checklist (in detail tab) → perfect departure confirmation with streak."
+    >
+      <Artboard label="Push Notification (Lock Screen)"><Screen_LockNotif/></Artboard>
+      <Artboard label="Walk-Out Checklist (In Progress)"><Screen_Checklist/></Artboard>
+      <Artboard label="Perfect Departure"><Screen_PerfectDeparture/></Artboard>
+    </Section>
+
+    <Section
+      id="ux-plus"
+      title="4 · UX Improvements"
+      subtitle="New screens that close real gaps: forgot-it recovery loop, insights to motivate, multi-day trip planner, and a friendly empty state."
+    >
+      <Artboard label="Forgot Something?"><Screen_ForgotIt/></Artboard>
+      <Artboard label="Insights / Stats"><Screen_Stats/></Artboard>
+      <Artboard label="Trip Planner"><Screen_Trip/></Artboard>
+      <Artboard label="Empty State"><Screen_Empty/></Artboard>
+    </Section>
+
+    <footer style={{
+      marginTop: 24, paddingTop: 24, borderTop: '1px solid rgba(60,50,40,0.10)',
+      fontSize: 12, color: 'rgba(60,50,40,0.55)',
+    }}>
+      DayPack · 18 screens · iOS hi-fi prototype.
+    </footer>
+  </div>
+);
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
