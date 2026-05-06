@@ -1,24 +1,20 @@
-//
-//  ContentView.swift
-//  DayPack
-//
-//  Created by winpassornratchakul on 1/5/2569 BE.
-//
-
 import SwiftUI
 
 struct ContentView: View {
+    @AppStorage("hasOnboarded") private var hasOnboarded: Bool = false
+
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, win!")
+        if hasOnboarded {
+            MainTabView()
+        } else {
+            OnboardingWelcomeView {
+                hasOnboarded = true
+            }
         }
-        .padding()
     }
 }
 
-#Preview {
+#Preview("Main") {
     ContentView()
+        .environment(\.loadoutService, MockLoadoutService.shared)
 }

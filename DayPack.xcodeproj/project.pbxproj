@@ -11,7 +11,7 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		D0F8B0302FA49DF5003505C4 /* DayPack */ = {
+		D007C6322FAB378900206E66 /* DayPack */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = DayPack;
 			sourceTree = "<group>";
@@ -32,7 +32,7 @@
 		D0F8B0252FA49DF5003505C4 = {
 			isa = PBXGroup;
 			children = (
-				D0F8B0302FA49DF5003505C4 /* DayPack */,
+				D007C6322FAB378900206E66 /* DayPack */,
 				D0F8B02F2FA49DF5003505C4 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -61,7 +61,7 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				D0F8B0302FA49DF5003505C4 /* DayPack */,
+				D007C6322FAB378900206E66 /* DayPack */,
 			);
 			name = DayPack;
 			packageProductDependencies = (
