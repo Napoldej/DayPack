@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXFileReference section */
+		D0CD3EC12FABC80300C1C3B6 /* DayPackBackend */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = DayPackBackend; sourceTree = "<group>"; };
 		D0F8B02E2FA49DF5003505C4 /* DayPack.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DayPack.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -32,6 +33,7 @@
 		D0F8B0252FA49DF5003505C4 = {
 			isa = PBXGroup;
 			children = (
+				D0CD3EC12FABC80300C1C3B6 /* DayPackBackend */,
 				D007C6322FAB378900206E66 /* DayPack */,
 				D0F8B02F2FA49DF5003505C4 /* Products */,
 			);
