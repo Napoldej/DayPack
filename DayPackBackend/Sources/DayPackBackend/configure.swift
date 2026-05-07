@@ -27,6 +27,7 @@ public func configure(_ app: Application) async throws {
     app.migrations.add(AddScheduledDaysToLoadout())
     app.migrations.add(AddTemporaryFieldsToLoadout())
     app.migrations.add(AddAlertTimeToLoadout())
+    app.migrations.add(AddReturnAlertTimeToLoadout())
 
     // register routes
     try routes(app)

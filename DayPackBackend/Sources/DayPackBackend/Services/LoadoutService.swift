@@ -33,7 +33,8 @@ struct LoadoutService: LoadoutServiceProtocol {
             scheduledDays: dto.scheduledDays,
             isTemporary: dto.isTemporary,
             expiresAt: dto.isTemporary ? Calendar.current.date(byAdding: .day, value: 1, to: Date()) : nil,
-            alertTime: dto.alertTime,               // ← add this
+            alertTime: dto.alertTime,
+            returnAlertTime: dto.returnAlertTime,   // ← add this
             userID: userID
         )
         _ = try await repository.create(loadout, on: db)
@@ -53,7 +54,8 @@ struct LoadoutService: LoadoutServiceProtocol {
         if let isShared = dto.isShared { loadout.isShared = isShared }
         if let scheduledDays = dto.scheduledDays { loadout.scheduledDays = scheduledDays }
         if let isTemporary = dto.isTemporary { loadout.isTemporary = isTemporary }
-        if let alertTime = dto.alertTime { loadout.alertTime = alertTime }  // ← add this
+        if let alertTime = dto.alertTime { loadout.alertTime = alertTime }
+        if let returnAlertTime = dto.returnAlertTime { loadout.returnAlertTime = returnAlertTime }  // ← add this
 
         _ = try await repository.update(loadout, on: db)
 

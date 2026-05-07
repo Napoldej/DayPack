@@ -9,7 +9,8 @@ struct LoadoutCreateDTO: Content {
     let scheduledDays: [Int]
     let isTemporary: Bool
     let expiresAt: Date?
-    let alertTime: String?      // ← add this
+    let alertTime: String?
+    let returnAlertTime: String?    // ← add this
 }
 
 struct LoadoutUpdateDTO: Content {
@@ -19,7 +20,8 @@ struct LoadoutUpdateDTO: Content {
     let scheduledDays: [Int]?
     let isTemporary: Bool?
     let expiresAt: Date?
-    let alertTime: String?      // ← add this
+    let alertTime: String?
+    let returnAlertTime: String?    // ← add this
 }
 
 struct LoadoutResponseDTO: Content {
@@ -30,7 +32,8 @@ struct LoadoutResponseDTO: Content {
     let scheduledDays: [Int]
     let isTemporary: Bool
     let expiresAt: Date?
-    let alertTime: String?      // ← add this
+    let alertTime: String?
+    let returnAlertTime: String?    // ← add this
     let items: [ItemResponseDTO]
 }
 
@@ -44,7 +47,8 @@ extension Loadout {
             scheduledDays: self.scheduledDays,
             isTemporary: self.isTemporary,
             expiresAt: self.expiresAt,
-            alertTime: self.alertTime,          // ← add this
+            alertTime: self.alertTime,
+            returnAlertTime: self.returnAlertTime,  // ← add this
             items: self.items.map { $0.toDTO() }
         )
     }

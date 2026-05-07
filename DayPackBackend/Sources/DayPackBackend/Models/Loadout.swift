@@ -34,10 +34,13 @@ final class Loadout: Model, Content, @unchecked Sendable {
     
     @OptionalField(key: "alert_time")
     var alertTime: String?  // "07:00" — stored as HH:mm string
+    
+    @OptionalField(key: "return_alert_time")
+    var returnAlertTime: String?
 
     init() {}
 
-    init(id: UUID? = nil, name: String, icon: String? = nil, isShared: Bool = false, scheduledDays: [Int] = [], isTemporary: Bool = false, expiresAt: Date? = nil, alertTime: String? = nil, userID: UUID) {
+    init(id: UUID? = nil, name: String, icon: String? = nil, isShared: Bool = false, scheduledDays: [Int] = [], isTemporary: Bool = false, expiresAt: Date? = nil, alertTime: String? = nil, returnAlertTime: String? = nil, userID: UUID) {
         self.id = id
         self.name = name
         self.icon = icon
@@ -46,6 +49,7 @@ final class Loadout: Model, Content, @unchecked Sendable {
         self.isTemporary = isTemporary
         self.expiresAt = expiresAt
         self.alertTime = alertTime
+        self.returnAlertTime = returnAlertTime
         self.$user.id = userID
     }
 }
