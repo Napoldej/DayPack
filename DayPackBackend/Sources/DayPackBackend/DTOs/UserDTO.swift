@@ -1,29 +1,31 @@
-import Fluent
+// DTOs/UserDTO.swift
 import Vapor
 
-struct UserDTO: Content {
-    var id: UUID?
-    var name: String?
-    var email: String?
-    
-    func toModel() -> User {
-        let model = User()
-        
-        model.id = self.id
-        if let name = self.name {
-            model.name = name
-        }
-        if let email = self.email {
-            model.email = email
-        }
-        return model
-    }
+// Received from client on register
+struct UserCreateDTO: Content {
+    let name: String
+    let email: String
+    let password: String
+}
+
+// Received from client on update
+struct UserUpdateDTO: Content {
+    let name: String?
+    let email: String?
+    let password: String?
+}
+
+// Sent back to client — never exposes password
+struct UserResponseDTO: Content {
+    let id: UUID
+    let name: String
+    let email: String
 }
 
 extension User {
-    func toDTO() -> UserDTO {
-        UserDTO(
-            id: self.id,
+    func toDTO() -> UserResponseDTO {
+        UserResponseDTO(
+            id: self.id!,
             name: self.name,
             email: self.email
         )
