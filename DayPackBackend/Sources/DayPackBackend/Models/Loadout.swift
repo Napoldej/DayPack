@@ -1,8 +1,7 @@
-// Loadout.swift
 import Fluent
 import Vapor
 
-final class Loadout: Model, Content,@unchecked Sendable  {
+final class Loadout: Model, Content, @unchecked Sendable {
     static let schema = "loadouts"
     
     @ID(key: .id)
@@ -11,18 +10,25 @@ final class Loadout: Model, Content,@unchecked Sendable  {
     @Field(key: "name")
     var name: String
     
-    @Field(key: "day_type")
-    var dayType: String
+    @OptionalField(key: "icon")
+    var icon: String?
+    
+    @Field(key: "is_shared")
+    var isShared: Bool
     
     @Parent(key: "user_id")
     var user: User
     
+    @Children(for: \.$loadout)
+    var items: [Item]
+    
     init() {}
     
-    init(id: UUID? = nil, name: String, dayType: String, userID: User.IDValue) {
+    init(id: UUID? = nil, name: String, icon: String? = nil, isShared: Bool = false, userID: UUID) {
         self.id = id
         self.name = name
-        self.dayType = dayType
+        self.icon = icon
+        self.isShared = isShared
         self.$user.id = userID
     }
 }
