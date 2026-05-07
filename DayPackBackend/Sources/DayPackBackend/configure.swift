@@ -20,6 +20,9 @@ public func configure(_ app: Application) async throws {
     app.migrations.add(CreateUser())
     app.migrations.add(CreateLoadout())
     app.migrations.add(CreateItem())
+    app.migrations.add(CreateCheckSession())
+    app.migrations.add(CreateCheckItem())
+    app.migrations.add(CreateSharedPack())
 
     // register routes
     try routes(app)
