@@ -24,6 +24,7 @@ public func configure(_ app: Application) async throws {
     app.migrations.add(CreateCheckSession())
     app.migrations.add(CreateCheckItem())
     app.migrations.add(CreateSharedPack())
+    app.migrations.add(AddScheduledDaysToLoadout())
 
     // register routes
     try routes(app)

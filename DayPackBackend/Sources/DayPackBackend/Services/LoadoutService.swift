@@ -30,12 +30,18 @@ struct LoadoutService: LoadoutServiceProtocol {
             name: dto.name,
             icon: dto.icon,
             isShared: dto.isShared,
+            scheduledDays: dto.scheduledDays,
             userID: userID
         )
-        let created = try await repository.create(loadout, on: db)
-        return created.toDTO()
-    }
+        _ = try await repository.create(loadout, on: db)
 
+        // Reload with items eager loaded
+        guard let reloaded = try await repository.find(id: loadout.id!, on: db) else {
+            throw Abort(.internalServerError, reason: "Failed to reload loadout")
+        }
+        return reloaded.toDTO()
+    }
+    
     func update(id: UUID, dto: LoadoutUpdateDTO, on db: any Database) async throws -> LoadoutResponseDTO {
         guard let loadout = try await repository.find(id: id, on: db) else {
             throw Abort(.notFound, reason: "Loadout not found")
