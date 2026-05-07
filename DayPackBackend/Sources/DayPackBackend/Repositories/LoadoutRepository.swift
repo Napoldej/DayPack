@@ -8,6 +8,7 @@ protocol LoadoutRepositoryProtocol {
     func create(_ loadout: Loadout, on db: any Database) async throws -> Loadout
     func update(_ loadout: Loadout, on db: any Database) async throws -> Loadout
     func delete(id: UUID, on db: any Database) async throws
+    func deleteExpired(on db: any Database) async throws
 }
 
 struct LoadoutRepository: LoadoutRepositoryProtocol {
@@ -41,4 +42,11 @@ struct LoadoutRepository: LoadoutRepositoryProtocol {
         }
         try await loadout.delete(on: db)
     }
+    
+    func deleteExpired(on db: any Database) async throws {
+            try await Loadout.query(on: db)
+                .filter(\.$isTemporary == true)
+                .filter(\.$expiresAt <= Date())
+                .delete()
+        }
 }

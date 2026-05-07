@@ -31,11 +31,13 @@ struct LoadoutService: LoadoutServiceProtocol {
             icon: dto.icon,
             isShared: dto.isShared,
             scheduledDays: dto.scheduledDays,
+            isTemporary: dto.isTemporary,
+            expiresAt: dto.isTemporary ? Calendar.current.date(byAdding: .day, value: 1, to: Date()) : nil,
+            alertTime: dto.alertTime,               // ← add this
             userID: userID
         )
         _ = try await repository.create(loadout, on: db)
 
-        // Reload with items eager loaded
         guard let reloaded = try await repository.find(id: loadout.id!, on: db) else {
             throw Abort(.internalServerError, reason: "Failed to reload loadout")
         }
@@ -49,9 +51,16 @@ struct LoadoutService: LoadoutServiceProtocol {
         if let name = dto.name { loadout.name = name }
         if let icon = dto.icon { loadout.icon = icon }
         if let isShared = dto.isShared { loadout.isShared = isShared }
+        if let scheduledDays = dto.scheduledDays { loadout.scheduledDays = scheduledDays }
+        if let isTemporary = dto.isTemporary { loadout.isTemporary = isTemporary }
+        if let alertTime = dto.alertTime { loadout.alertTime = alertTime }  // ← add this
 
-        let updated = try await repository.update(loadout, on: db)
-        return updated.toDTO()
+        _ = try await repository.update(loadout, on: db)
+
+        guard let reloaded = try await repository.find(id: loadout.id!, on: db) else {
+            throw Abort(.internalServerError, reason: "Failed to reload loadout")
+        }
+        return reloaded.toDTO()
     }
 
     func delete(id: UUID, on db: any Database) async throws {
