@@ -4,6 +4,7 @@ struct LoadoutsView: View {
     @Environment(\.loadoutService) private var service
     @State private var viewModel: LoadoutsViewModel?
     @State private var showBuilder = false
+    @State private var editingLoadout: Loadout?
 
     var body: some View {
         NavigationStack {
@@ -36,26 +37,39 @@ struct LoadoutsView: View {
                 }
             }
             .sheet(isPresented: $showBuilder, onDismiss: {
-                viewModel?.refresh()
+                Task { await viewModel?.refresh() }
             }) {
                 if let vm = viewModel {
-                    LoadoutBuilderView { name, symbol, tint, schedule, items in
-                        _ = vm.createLoadout(
-                            name: name,
-                            symbol: symbol,
-                            tint: tint,
-                            schedule: schedule,
-                            items: items
-                        )
+                    LoadoutBuilderView { name, symbol, tint, schedule, items, isTemporary, alertTime, returnAlertTime in
+                        Task {
+                            _ = await vm.createLoadout(
+                                name: name,
+                                symbol: symbol,
+                                tint: tint,
+                                schedule: schedule,
+                                items: items,
+                                isTemporary: isTemporary,
+                                alertTime: alertTime,
+                                returnAlertTime: returnAlertTime
+                            )
+                        }
                     }
+                }
+            }
+            .sheet(item: $editingLoadout, onDismiss: {
+                Task { await viewModel?.refresh() }
+            }) { loadout in
+                LoadoutEditorView(loadout: loadout) {
+                    Task { await viewModel?.refresh() }
                 }
             }
         }
         .onAppear {
             if viewModel == nil {
                 viewModel = LoadoutsViewModel(service: service)
+                Task { await viewModel?.refresh() }
             } else {
-                viewModel?.refresh()
+                Task { await viewModel?.refresh() }
             }
         }
     }
@@ -72,12 +86,42 @@ struct LoadoutsView: View {
             )
 
             ForEach(vm.filtered) { loadout in
-                LoadoutCard(
-                    loadout: loadout,
-                    itemCount: vm.itemCount(for: loadout),
-                    isActive: loadout.id == vm.todaysID,
-                    onTap: { vm.setToday(loadout) }
-                )
+                ZStack(alignment: .topTrailing) {
+                    LoadoutCard(
+                        loadout: loadout,
+                        itemCount: vm.itemCount(for: loadout),
+                        isActive: loadout.id == vm.todaysID,
+                        onTap: { Task { await vm.setToday(loadout) } }
+                    )
+
+                    Menu {
+                        Button {
+                            editingLoadout = loadout
+                        } label: {
+                            Label("Edit", systemImage: "pencil")
+                        }
+                        Button {
+                            Task { await vm.setToday(loadout) }
+                        } label: {
+                            Label("Use Today", systemImage: "checkmark.circle")
+                        }
+                        Button(role: .destructive) {
+                            Task { await vm.deleteLoadout(loadout) }
+                        } label: {
+                            Label("Delete", systemImage: "trash")
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(Color.dpInk2)
+                            .frame(width: 32, height: 32)
+                            .background(Circle().fill(Color.dpBgGrouped))
+                    }
+                    .menuStyle(.borderlessButton)
+                    .menuOrder(.fixed)
+                    .padding(10)
+                    .accessibilityLabel("Loadout actions")
+                }
             }
         }
         .padding(.horizontal, DPSpacing.lg)
