@@ -82,38 +82,67 @@ final class MockLoadoutService: LoadoutService {
         self.stats = seedStats
     }
 
-    func todaysLoadout() -> Loadout? {
+    func todaysLoadout() async throws -> Loadout? {
         guard let todayLoadoutID else { return loadouts.first }
         return loadouts.first(where: { $0.id == todayLoadoutID }) ?? loadouts.first
     }
 
-    func allLoadouts() -> [Loadout] {
+    func allLoadouts() async throws -> [Loadout] {
         loadouts
     }
 
-    func items(in loadout: Loadout) -> [Item] {
+    func loadoutsForTomorrow() async throws -> TomorrowPreview {
+        let scheduled = Array(loadouts.dropFirst().prefix(1)).map { l -> Loadout in
+            var copy = l
+            copy.isSuggestedForTomorrow = true
+            return copy
+        }
+        return TomorrowPreview(scheduled: scheduled, temporary: [])
+    }
+
+    func items(in loadout: Loadout) async throws -> [Item] {
         loadout.itemIDs.compactMap { id in items.first(where: { $0.id == id }) }
     }
 
-    func entries(for loadout: Loadout) -> [ChecklistEntry] {
+    func entries(for loadout: Loadout) async throws -> [ChecklistEntry] {
         loadout.itemIDs.compactMap { itemID in
             entries.first(where: { $0.itemID == itemID })
         }
     }
 
-    func togglePacked(entryID: UUID) {
+    func togglePacked(entryID: UUID) async throws {
         guard let idx = entries.firstIndex(where: { $0.id == entryID }) else { return }
         entries[idx].isPacked.toggle()
     }
 
+    func completeCheck(for loadout: Loadout) async throws {
+        if loadout.isTemporary {
+            loadouts.removeAll { $0.id == loadout.id }
+            entries.removeAll { loadout.itemIDs.contains($0.itemID) }
+            todayLoadoutID = loadouts.first?.id
+        }
+    }
+
     @discardableResult
-    func createLoadout(name: String, symbol: String, tint: ItemTint, schedule: String, items newItems: [Item]) -> Loadout {
+    func createLoadout(
+        name: String,
+        symbol: String,
+        tint: ItemTint,
+        schedule: String,
+        items newItems: [Item],
+        isTemporary: Bool = false,
+        alertTime: String? = nil,
+        returnAlertTime: String? = nil
+    ) async throws -> Loadout {
         let loadout = Loadout(
             name: name,
             symbol: symbol,
             tint: tint,
             schedule: schedule,
-            itemIDs: newItems.map(\.id)
+            itemIDs: newItems.map(\.id),
+            isTemporary: isTemporary,
+            alertTime: alertTime,
+            returnAlertTime: returnAlertTime
         )
 
         items.append(contentsOf: newItems)
@@ -123,16 +152,69 @@ final class MockLoadoutService: LoadoutService {
         return loadout
     }
 
-    func setTodaysLoadout(id: UUID) {
+    func deleteLoadout(id: UUID) async throws {
+        guard let loadout = loadouts.first(where: { $0.id == id }) else { return }
+        loadouts.removeAll { $0.id == id }
+        entries.removeAll { loadout.itemIDs.contains($0.itemID) }
+        if todayLoadoutID == id {
+            todayLoadoutID = loadouts.first?.id
+        }
+    }
+
+    func updateLoadout(
+        _ loadout: Loadout,
+        name: String,
+        symbol: String,
+        tint: ItemTint,
+        schedule: String,
+        isTemporary: Bool,
+        alertTime: String?,
+        returnAlertTime: String?
+    ) async throws -> Loadout {
+        guard let index = loadouts.firstIndex(where: { $0.id == loadout.id }) else { return loadout }
+        loadouts[index].name = name
+        loadouts[index].symbol = symbol
+        loadouts[index].tint = tint
+        loadouts[index].schedule = schedule
+        loadouts[index].isTemporary = isTemporary
+        loadouts[index].alertTime = alertTime
+        loadouts[index].returnAlertTime = returnAlertTime
+        return loadouts[index]
+    }
+
+    func addItem(to loadout: Loadout, item: Item) async throws -> Item {
+        items.append(item)
+        if let index = loadouts.firstIndex(where: { $0.id == loadout.id }) {
+            loadouts[index].itemIDs.append(item.id)
+        }
+        entries.append(ChecklistEntry(itemID: item.id))
+        return item
+    }
+
+    func updateItem(_ item: Item) async throws -> Item {
+        guard let index = items.firstIndex(where: { $0.id == item.id }) else { return item }
+        items[index] = item
+        return item
+    }
+
+    func deleteItem(id: UUID, from loadout: Loadout) async throws {
+        items.removeAll { $0.id == id }
+        entries.removeAll { $0.itemID == id }
+        if let index = loadouts.firstIndex(where: { $0.id == loadout.id }) {
+            loadouts[index].itemIDs.removeAll { $0 == id }
+        }
+    }
+
+    func setTodaysLoadout(id: UUID) async throws {
         guard loadouts.contains(where: { $0.id == id }) else { return }
         todayLoadoutID = id
     }
 
-    func recentDayStats(days: Int) -> [DayStat] {
+    func recentDayStats(days: Int) async throws -> [DayStat] {
         Array(stats.prefix(days)).reversed()
     }
 
-    func currentStreak() -> Int {
+    func currentStreak() async throws -> Int {
         var streak = 0
         for stat in stats {
             if stat.completion >= 0.999 { streak += 1 } else { break }
