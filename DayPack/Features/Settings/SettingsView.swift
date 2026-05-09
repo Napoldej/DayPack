@@ -1,11 +1,14 @@
 import SwiftUI
 
 struct SettingsView: View {
+    @Environment(\.authSession) private var session
+
     @AppStorage("walkOutReminder") private var walkOutReminder: Bool = true
     @AppStorage("forgotNudge")     private var forgotNudge: Bool = true
     @AppStorage("highPriorityHL")  private var highPriorityHL: Bool = true
     @AppStorage("recurringHints")  private var recurringHints: Bool = true
-    @AppStorage("hasOnboarded")    private var hasOnboarded: Bool = true
+
+    @State private var showLogoutConfirm = false
 
     var body: some View {
         NavigationStack {
@@ -37,17 +40,24 @@ struct SettingsView: View {
                         )
                     }
 
+                    if let user = session.currentUser {
+                        section(title: "Account", eyebrow: "Signed in") {
+                            infoRow(title: "Name",  value: user.name)
+                            infoRow(title: "Email", value: user.email)
+                        }
+                    }
+
                     section(title: "About", eyebrow: "DayPack v0.1") {
                         infoRow(title: "Version", value: "0.1.0")
                         infoRow(title: "Made by", value: "Student Team 2026")
 
                         Button {
-                            hasOnboarded = false
+                            showLogoutConfirm = true
                         } label: {
                             HStack {
-                                Text("Reset onboarding").font(.system(size: 15, weight: .semibold))
+                                Text("Log out").font(.system(size: 15, weight: .semibold))
                                 Spacer()
-                                Image(systemName: "arrow.counterclockwise").font(.system(size: 14, weight: .semibold))
+                                Image(systemName: "rectangle.portrait.and.arrow.right").font(.system(size: 14, weight: .semibold))
                             }
                             .foregroundStyle(Color.dpRed)
                             .padding(.horizontal, 14)
@@ -66,6 +76,12 @@ struct SettingsView: View {
             .background(Color.dpBg)
             .navigationTitle("Settings")
             .toolbarBackground(Color.dpBg, for: .navigationBar)
+            .alert("Log out?", isPresented: $showLogoutConfirm) {
+                Button("Cancel", role: .cancel) {}
+                Button("Log out", role: .destructive) { session.logout() }
+            } message: {
+                Text("You'll need to sign in again to see your loadouts.")
+            }
         }
     }
 

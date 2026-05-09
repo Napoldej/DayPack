@@ -1,7 +1,8 @@
 import SwiftUI
 
 struct OnboardingWelcomeView: View {
-    var onContinue: () -> Void
+    var onGetStarted: () -> Void
+    var onLogin: () -> Void
 
     var body: some View {
         VStack(spacing: 0) {
@@ -51,8 +52,8 @@ struct OnboardingWelcomeView: View {
             Spacer()
 
             VStack(spacing: 0) {
-                PrimaryButton(title: "Get Started", action: onContinue)
-                TextButton(title: "I already have an account", tone: .muted, action: onContinue)
+                PrimaryButton(title: "Get Started", action: onGetStarted)
+                TextButton(title: "I already have an account", tone: .muted, action: onLogin)
             }
         }
         .padding(.horizontal, 28)
@@ -63,5 +64,5 @@ struct OnboardingWelcomeView: View {
 }
 
 #Preview {
-    OnboardingWelcomeView(onContinue: {})
+    OnboardingWelcomeView(onGetStarted: {}, onLogin: {})
 }
