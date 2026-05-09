@@ -65,7 +65,6 @@ struct RegisterView: View {
                             text: $password,
                             placeholder: "Create a password",
                             isSecure: true,
-                            textContentType: .newPassword,
                             hint: "At least 8 characters"
                         )
                         CustomTextField(
@@ -73,7 +72,6 @@ struct RegisterView: View {
                             text: $confirmPassword,
                             placeholder: "Type it again",
                             isSecure: true,
-                            textContentType: .newPassword,
                             hint: confirmPassword.isEmpty || password == confirmPassword ? nil : "Passwords don't match"
                         )
                     }
