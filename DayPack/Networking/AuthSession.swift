@@ -43,6 +43,9 @@ final class AuthSession {
         self.api = api
         self.tokenStore = tokenStore
         loadCachedUser()
+        api.sessionExpiredHandler = { [weak self] in
+            Task { @MainActor in self?.logout() }
+        }
     }
 
     func login(email: String, password: String) async {

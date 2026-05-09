@@ -5,17 +5,32 @@ import SwiftUI
 final class APIClient {
     static let shared = APIClient()
 
-    var baseURL: URL = URL(string: "http://localhost:8080")!
+    var baseURL: URL
+    var sessionExpiredHandler: (() -> Void)?
 
     private let session: URLSession
     private let tokenStore: KeychainTokenStore
 
     init(
         session: URLSession = .shared,
-        tokenStore: KeychainTokenStore = .shared
+        tokenStore: KeychainTokenStore = .shared,
+        baseURL: URL = APIClient.defaultBaseURL
     ) {
         self.session = session
         self.tokenStore = tokenStore
+        self.baseURL = baseURL
+    }
+
+    static var defaultBaseURL: URL {
+        if let envOverride = ProcessInfo.processInfo.environment["DAYPACK_API_BASE_URL"],
+           let url = URL(string: envOverride) {
+            return url
+        }
+        if let storedOverride = UserDefaults.standard.string(forKey: "api.baseURL"),
+           let url = URL(string: storedOverride) {
+            return url
+        }
+        return URL(string: "http://localhost:8080")!
     }
 
     static let encoder: JSONEncoder = {
@@ -122,8 +137,14 @@ final class APIClient {
                 throw APIError.decoding(error)
             }
         case 401:
-            tokenStore.clear()
-            throw APIError.unauthorized
+            let reason = (try? Self.decoder.decode(APIErrorBody.self, from: data))?.reason
+            if requiresAuth {
+                tokenStore.clear()
+                sessionExpiredHandler?()
+                throw APIError.sessionExpired
+            } else {
+                throw APIError.server(status: 401, reason: reason)
+            }
         case 404:
             throw APIError.notFound
         default:

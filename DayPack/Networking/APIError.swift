@@ -2,7 +2,7 @@ import Foundation
 
 enum APIError: Error, LocalizedError {
     case invalidURL
-    case unauthorized
+    case sessionExpired
     case notFound
     case server(status: Int, reason: String?)
     case decoding(Error)
@@ -11,10 +11,10 @@ enum APIError: Error, LocalizedError {
     var errorDescription: String? {
         switch self {
         case .invalidURL:                  return "Invalid request URL."
-        case .unauthorized:                return "Your session has expired. Please log in again."
+        case .sessionExpired:              return "Your session has expired. Please log in again."
         case .notFound:                    return "Not found."
-        case .server(let status, let reason):
-            return reason ?? "Server error (\(status))."
+        case .server(_, let reason):
+            return reason ?? "Something went wrong. Please try again."
         case .decoding(let error):         return "Couldn't read server response: \(error.localizedDescription)"
         case .transport(let error):        return "Network error: \(error.localizedDescription)"
         }
