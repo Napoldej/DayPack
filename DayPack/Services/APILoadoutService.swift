@@ -22,15 +22,22 @@ final class APILoadoutService: LoadoutService {
     }
 
     func todaysLoadout() async throws -> Loadout? {
-        if let suggestion = try await tomorrowSuggestion() {
-            return suggestion
-        }
-
         let loadouts = try await allLoadouts()
         guard let userID = authSession.currentUser?.id else { return loadouts.first }
-        let selectedID = UserDefaults.standard.string(forKey: selectedTodayKeyPrefix + userID.uuidString)
+
+        let manuallySelectedID = UserDefaults.standard
+            .string(forKey: selectedTodayKeyPrefix + userID.uuidString)
             .flatMap(UUID.init(uuidString:))
-        return loadouts.first(where: { $0.id == selectedID }) ?? loadouts.first
+        if let manuallySelected = loadouts.first(where: { $0.id == manuallySelectedID }) {
+            return manuallySelected
+        }
+
+        let weekday = Calendar(identifier: .gregorian).component(.weekday, from: Date())
+        if let scheduled = loadouts.first(where: { !$0.isTemporary && $0.scheduledDays.contains(weekday) }) {
+            return scheduled
+        }
+
+        return loadouts.first(where: { !$0.isTemporary })
     }
 
     func allLoadouts() async throws -> [Loadout] {
@@ -188,6 +195,7 @@ final class APILoadoutService: LoadoutService {
         entries.append(contentsOf: createdItems.map { ChecklistEntry(itemID: $0.id) })
         loadoutCache.insert(loadout, at: 0)
         try await setTodaysLoadout(id: loadout.id)
+        await syncNotifications()
         return loadout
     }
 
@@ -196,6 +204,7 @@ final class APILoadoutService: LoadoutService {
         loadoutCache.removeAll { $0.id == id }
         itemCache[id] = nil
         sessionIDsByLoadoutID[id] = nil
+        await syncNotifications()
     }
 
     func updateLoadout(
@@ -230,6 +239,7 @@ final class APILoadoutService: LoadoutService {
         if let index = loadoutCache.firstIndex(where: { $0.id == updated.id }) {
             loadoutCache[index] = updated
         }
+        await syncNotifications()
         return updated
     }
 
@@ -248,7 +258,7 @@ final class APILoadoutService: LoadoutService {
     func updateItem(_ item: Item) async throws -> Item {
         let dto: ItemDTO = try await api.put(
             "/items/\(item.id.uuidString)",
-            body: ItemUpdateBody(name: item.name, isRecurring: item.tag != "Optional", order: nil)
+            body: ItemUpdateBody(name: item.name, isRecurring: item.tag != "Optional", order: item.order)
         )
         let updated = dto.toModel(symbol: item.symbol, tint: item.tint, priority: item.priority, tag: item.tag)
         for key in itemCache.keys {
@@ -302,6 +312,14 @@ final class APILoadoutService: LoadoutService {
         )
         sessionIDsByLoadoutID[loadout.id] = created.id
         return created.id
+    }
+
+    private func syncNotifications() async {
+        do {
+            try await NotificationScheduler.sync(loadouts: try await allLoadouts())
+        } catch {
+            // Notification permission or scheduling failure should not block backend saves.
+        }
     }
 }
 
@@ -394,7 +412,8 @@ private struct ItemDTO: Decodable {
             symbol: symbol ?? Self.symbol(for: name),
             tint: tint ?? (isRecurring ? .orange : .blue),
             priority: priority ?? (isRecurring ? .high : .normal),
-            tag: tag ?? (isRecurring ? "Always" : "Optional")
+            tag: tag ?? (isRecurring ? "Always" : "Optional"),
+            order: order
         )
     }
 
