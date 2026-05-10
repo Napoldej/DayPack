@@ -1,14 +1,19 @@
+import CoreLocation
 import SwiftUI
 
 struct SettingsView: View {
     @Environment(\.authSession) private var session
+    @Environment(\.loadoutService) private var loadoutService
+    @Environment(\.homeLocationService) private var homeLocationService
 
     @AppStorage("walkOutReminder") private var walkOutReminder: Bool = true
-    @AppStorage("forgotNudge")     private var forgotNudge: Bool = true
-    @AppStorage("highPriorityHL")  private var highPriorityHL: Bool = true
-    @AppStorage("recurringHints")  private var recurringHints: Bool = true
 
     @State private var showLogoutConfirm = false
+    @State private var showDeleteAccountConfirm = false
+    @State private var editName = ""
+    @State private var editEmail = ""
+    @State private var homeStatus = "Not set"
+    @State private var permissionStatus = "Not requested"
 
     var body: some View {
         NavigationStack {
@@ -17,33 +22,83 @@ struct SettingsView: View {
                     section(title: "Reminders", eyebrow: "Notifications") {
                         ToggleRow(
                             title: "Walk-out reminder",
-                            subtitle: "5:30 PM at Home",
+                            subtitle: "Local alerts at each loadout's departure time",
                             isOn: $walkOutReminder
                         )
-                        ToggleRow(
-                            title: "Forgot-something nudge",
-                            subtitle: "Alert when leaving with unpacked items",
-                            isOn: $forgotNudge
-                        )
+                        .onChange(of: walkOutReminder) { _, _ in
+                            Task { await refreshNotifications() }
+                        }
                     }
 
-                    section(title: "Items", eyebrow: "Behavior") {
-                        ToggleRow(
-                            title: "High-priority highlighting",
-                            subtitle: "Flag don't-forget items in red",
-                            isOn: $highPriorityHL
-                        )
-                        ToggleRow(
-                            title: "Recurring suggestions",
-                            subtitle: "Suggest items based on your day",
-                            isOn: $recurringHints
-                        )
+                    section(title: "Home Location", eyebrow: "Geofence") {
+                        infoRow(title: "Permission", value: permissionStatus)
+                        infoRow(title: "Home", value: homeStatus)
+                        HStack(spacing: DPSpacing.sm) {
+                            SecondaryButton(title: "Allow", icon: "location.fill", size: .md) {
+                                homeLocationService.requestPermissions()
+                                refreshHomeStatus()
+                            }
+                            SecondaryButton(title: "Use Current", icon: "scope", size: .md) {
+                                homeLocationService.useCurrentLocationAsHome()
+                                refreshHomeStatus()
+                            }
+                        }
+                        if homeLocationService.hasHomeLocation {
+                            SecondaryButton(title: "Clear Home", icon: "xmark.circle", variant: .danger, size: .md) {
+                                homeLocationService.clearHome()
+                                refreshHomeStatus()
+                            }
+                        }
+                    }
+
+                    section(title: "History", eyebrow: "Backend") {
+                        NavigationLink {
+                            CheckHistoryView()
+                        } label: {
+                            HStack {
+                                Text("Check sessions").font(.system(size: 15, weight: .semibold))
+                                Spacer()
+                                Image(systemName: "clock.arrow.circlepath").font(.system(size: 14, weight: .semibold))
+                            }
+                            .foregroundStyle(Color.dpInk)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 12)
+                            .background(
+                                RoundedRectangle(cornerRadius: DPRadius.md, style: .continuous)
+                                    .fill(Color.dpSurface)
+                            )
+                        }
                     }
 
                     if let user = session.currentUser {
                         section(title: "Account", eyebrow: "Signed in") {
-                            infoRow(title: "Name",  value: user.name)
-                            infoRow(title: "Email", value: user.email)
+                            CustomTextField(label: "Name", text: $editName, placeholder: user.name)
+                            CustomTextField(
+                                label: "Email",
+                                text: $editEmail,
+                                placeholder: user.email,
+                                keyboardType: .emailAddress,
+                                textContentType: .emailAddress,
+                                autocapitalization: .never,
+                                disableAutocorrection: true
+                            )
+                            HStack(spacing: DPSpacing.sm) {
+                                SecondaryButton(
+                                    title: "Save",
+                                    icon: "checkmark",
+                                    size: .md
+                                ) {
+                                    Task { await session.updateAccount(name: editName, email: editEmail) }
+                                }
+                                SecondaryButton(
+                                    title: "Delete",
+                                    icon: "trash",
+                                    variant: .danger,
+                                    size: .md
+                                ) {
+                                    showDeleteAccountConfirm = true
+                                }
+                            }
                         }
                     }
 
@@ -82,6 +137,19 @@ struct SettingsView: View {
             } message: {
                 Text("You'll need to sign in again to see your loadouts.")
             }
+            .alert("Delete account?", isPresented: $showDeleteAccountConfirm) {
+                Button("Cancel", role: .cancel) {}
+                Button("Delete", role: .destructive) {
+                    Task { await session.deleteAccount() }
+                }
+            } message: {
+                Text("This removes your backend account and signs you out.")
+            }
+            .onAppear {
+                editName = session.currentUser?.name ?? ""
+                editEmail = session.currentUser?.email ?? ""
+                refreshHomeStatus()
+            }
         }
     }
 
@@ -111,6 +179,40 @@ struct SettingsView: View {
             RoundedRectangle(cornerRadius: DPRadius.md, style: .continuous)
                 .fill(Color.dpSurface)
         )
+    }
+
+    private func refreshNotifications() async {
+        do {
+            let loadouts = try await loadoutService.allLoadouts()
+            try await NotificationScheduler.sync(loadouts: loadouts)
+        } catch {
+            // Silent — gating + scheduling failures are not user-actionable.
+        }
+    }
+
+    private func refreshHomeStatus() {
+        permissionStatus = switch homeLocationService.authorizationStatus {
+        case .authorizedAlways:
+            "Always"
+        case .authorizedWhenInUse:
+            "While Using"
+        case .denied, .restricted:
+            "Denied"
+        case .notDetermined:
+            "Not requested"
+        @unknown default:
+            "Unknown"
+        }
+
+        if let coordinate = homeLocationService.homeCoordinate {
+            let latitude = coordinate.latitude.formatted(.number.precision(.fractionLength(4)))
+            let longitude = coordinate.longitude.formatted(.number.precision(.fractionLength(4)))
+            homeStatus = "\(latitude), \(longitude)"
+        } else if let error = homeLocationService.lastError {
+            homeStatus = error
+        } else {
+            homeStatus = "Not set"
+        }
     }
 }
 
