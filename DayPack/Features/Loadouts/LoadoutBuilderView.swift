@@ -10,20 +10,28 @@ struct LoadoutBuilderView: View {
     }
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.inventoryStore) private var inventoryStore
+
+    @State private var showInventoryPicker = false
 
     @State private var name = "Demo Day"
-    @State private var schedule = "Today"
+    @State private var selectedDays: Set<Int> = [2, 3, 4, 5, 6]
     @State private var symbol = "backpack.fill"
     @State private var tint: ItemTint = .orange
     @State private var newItemName = ""
     @State private var newItemRequired = true
+    @State private var isTemporary = false
+    @State private var departureAlertEnabled = false
+    @State private var returnAlertEnabled = false
+    @State private var departureAlertTime = Calendar.current.date(bySettingHour: 7, minute: 30, second: 0, of: Date()) ?? Date()
+    @State private var returnAlertTime = Calendar.current.date(bySettingHour: 18, minute: 0, second: 0, of: Date()) ?? Date()
     @State private var draftItems: [DraftItem] = [
         DraftItem(name: "Wallet", symbol: "wallet.pass.fill", tint: .orange, isRequired: true),
         DraftItem(name: "Keys", symbol: "key.fill", tint: .orange, isRequired: true),
         DraftItem(name: "Water Bottle", symbol: "drop.fill", tint: .blue, isRequired: false),
     ]
 
-    let onCreate: (String, String, ItemTint, String, [Item]) -> Void
+    let onCreate: (String, String, ItemTint, String, [Item], Bool, String?, String?) -> Void
 
     private let symbolOptions = [
         "backpack.fill", "book.closed.fill", "briefcase.fill",
@@ -31,7 +39,9 @@ struct LoadoutBuilderView: View {
     ]
 
     private var canCreate: Bool {
-        !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !draftItems.isEmpty
+        !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && !draftItems.isEmpty
+            && (isTemporary || !selectedDays.isEmpty)
     }
 
     var body: some View {
@@ -41,7 +51,10 @@ struct LoadoutBuilderView: View {
                     SectionHeader(title: "Loadout details", eyebrow: "Step 1")
                     detailsSection
 
-                    SectionHeader(title: "Items", eyebrow: "Step 2")
+                    SectionHeader(title: "Timing", eyebrow: "Step 2")
+                    timingSection
+
+                    SectionHeader(title: "Items", eyebrow: "Step 3")
                     itemsSection
 
                     PrimaryButton(
@@ -67,13 +80,35 @@ struct LoadoutBuilderView: View {
                     .foregroundStyle(Color.dpInk2)
                 }
             }
+            .sheet(isPresented: $showInventoryPicker) {
+                InventoryPickerSheet(
+                    excludedNames: Set(draftItems.map { $0.name.lowercased() })
+                ) { picked in
+                    importFromInventory(picked)
+                }
+            }
+        }
+    }
+
+    private func importFromInventory(_ items: [InventoryItem]) {
+        for item in items {
+            draftItems.append(
+                DraftItem(
+                    name: item.name,
+                    symbol: item.symbol,
+                    tint: item.tint,
+                    isRequired: true
+                )
+            )
         }
     }
 
     private var detailsSection: some View {
         VStack(spacing: DPSpacing.md) {
             CustomTextField(label: "Name", text: $name, placeholder: "School Day")
-            CustomTextField(label: "Schedule", text: $schedule, placeholder: "Today")
+            if !isTemporary {
+                WeekdaySelector(selectedDays: $selectedDays)
+            }
 
             DPCard {
                 VStack(alignment: .leading, spacing: DPSpacing.md) {
@@ -106,6 +141,56 @@ struct LoadoutBuilderView: View {
         }
     }
 
+    private var timingSection: some View {
+        VStack(spacing: DPSpacing.md) {
+            ToggleRow(
+                title: "Temporary loadout",
+                subtitle: "Tomorrow only",
+                isOn: $isTemporary
+            )
+
+            DPCard {
+                VStack(alignment: .leading, spacing: DPSpacing.md) {
+                    alertToggle(
+                        title: "Departure alert",
+                        subtitle: departureAlertEnabled ? timeText(departureAlertTime) : "No fixed time",
+                        symbol: "bell.fill",
+                        isOn: $departureAlertEnabled
+                    )
+                    if departureAlertEnabled {
+                        DatePicker(
+                            "Departure time",
+                            selection: $departureAlertTime,
+                            displayedComponents: .hourAndMinute
+                        )
+                        .datePickerStyle(.compact)
+                        .labelsHidden()
+                    }
+                }
+            }
+
+            DPCard {
+                VStack(alignment: .leading, spacing: DPSpacing.md) {
+                    alertToggle(
+                        title: "Return alert",
+                        subtitle: returnAlertEnabled ? timeText(returnAlertTime) : "No return reminder",
+                        symbol: "arrow.uturn.backward.circle.fill",
+                        isOn: $returnAlertEnabled
+                    )
+                    if returnAlertEnabled {
+                        DatePicker(
+                            "Return time",
+                            selection: $returnAlertTime,
+                            displayedComponents: .hourAndMinute
+                        )
+                        .datePickerStyle(.compact)
+                        .labelsHidden()
+                    }
+                }
+            }
+        }
+    }
+
     private var itemsSection: some View {
         VStack(spacing: DPSpacing.md) {
             DPCard {
@@ -118,8 +203,13 @@ struct LoadoutBuilderView: View {
                         isOn: $newItemRequired
                     )
 
-                    SecondaryButton(title: "Add Item", icon: "plus", size: .md) {
-                        addItem()
+                    HStack(spacing: DPSpacing.sm) {
+                        SecondaryButton(title: "Add Item", icon: "plus", size: .md) {
+                            addItem()
+                        }
+                        SecondaryButton(title: "From Inventory", icon: "tray.full.fill", size: .md) {
+                            showInventoryPicker = true
+                        }
                     }
                 }
             }
@@ -174,7 +264,7 @@ struct LoadoutBuilderView: View {
 
     private func create() {
         let cleanedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        let cleanedSchedule = schedule.trimmingCharacters(in: .whitespacesAndNewlines)
+        let schedule = WeekdaySchedule.text(from: selectedDays)
         let items = draftItems.map { draft in
             Item(
                 name: draft.name,
@@ -189,10 +279,53 @@ struct LoadoutBuilderView: View {
             cleanedName,
             symbol,
             tint,
-            cleanedSchedule.isEmpty ? "Manual" : cleanedSchedule,
-            items
+            isTemporary ? "Temporary" : schedule,
+            items,
+            isTemporary,
+            departureAlertEnabled ? backendTime(departureAlertTime) : nil,
+            returnAlertEnabled ? backendTime(returnAlertTime) : nil
         )
         dismiss()
+    }
+
+    private func alertToggle(
+        title: String,
+        subtitle: String,
+        symbol: String,
+        isOn: Binding<Bool>
+    ) -> some View {
+        HStack(spacing: DPSpacing.md) {
+            Image(systemName: symbol)
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(Color.dpOrange)
+                .frame(width: 30, height: 30)
+                .background(Circle().fill(Color.dpOrangeSoft))
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(Color.dpInk)
+                Text(subtitle)
+                    .font(.system(size: 12))
+                    .foregroundStyle(Color.dpInk3)
+            }
+            Spacer(minLength: DPSpacing.sm)
+            Toggle("", isOn: isOn)
+                .labelsHidden()
+                .tint(Color.dpOrange)
+        }
+    }
+
+    private func timeText(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .none
+        formatter.timeStyle = .short
+        return formatter.string(from: date)
+    }
+
+    private func backendTime(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm"
+        return formatter.string(from: date)
     }
 
     private func symbolForItem(named name: String) -> String {
@@ -210,5 +343,5 @@ struct LoadoutBuilderView: View {
 }
 
 #Preview {
-    LoadoutBuilderView { _, _, _, _, _ in }
+    LoadoutBuilderView { _, _, _, _, _, _, _, _ in }
 }
