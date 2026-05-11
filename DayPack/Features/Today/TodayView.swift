@@ -46,10 +46,15 @@ struct TodayView: View {
         VStack(alignment: .leading, spacing: DPSpacing.lg) {
             todayHeader(vm: vm)
 
-            if let loadout = vm.loadout {
-                LoadoutCard(loadout: loadout, itemCount: vm.totalCount, isActive: true)
+            if !vm.selectedLoadouts.isEmpty {
+                dayStackSection(vm: vm)
 
-                if loadout.isSuggestedForTomorrow || loadout.isTemporary || loadout.alertTime != nil || loadout.returnAlertTime != nil {
+                if homeLocationService.presence == .away && !vm.requiredUnpackedItems.isEmpty {
+                    leavingHomeWarning(vm: vm)
+                }
+
+                if let loadout = vm.loadout,
+                   loadout.isSuggestedForTomorrow || loadout.isTemporary || loadout.alertTime != nil || loadout.returnAlertTime != nil {
                     smartTimingPanel(loadout)
                 }
 
@@ -69,9 +74,10 @@ struct TodayView: View {
 
                 VStack(spacing: DPSpacing.sm) {
                     ForEach(vm.items) { item in
-                        ChecklistItemRow(
+                        MergedChecklistItemRow(
                             item: item,
                             isPacked: vm.entry(for: item)?.isPacked ?? false,
+                            sources: vm.sources(for: item),
                             onToggle: { Task { await vm.togglePacked(for: item) } }
                         )
                     }
@@ -116,7 +122,7 @@ struct TodayView: View {
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundStyle(Color.dpInk3)
 
-                    Text(vm.loadout?.name ?? "No active loadout")
+                    Text(vm.stackTitle)
                         .font(.system(size: 28, weight: .bold))
                         .foregroundStyle(Color.dpInk)
                         .lineLimit(2)
@@ -133,6 +139,95 @@ struct TodayView: View {
                         .foregroundStyle(Color.dpInk3)
                 }
                 .accessibilityLabel("\(vm.packedCount) of \(vm.totalCount) packed")
+            }
+        }
+    }
+
+    private func dayStackSection(vm: TodayViewModel) -> some View {
+        VStack(alignment: .leading, spacing: DPSpacing.md) {
+            SectionHeader(title: "Today's plan", eyebrow: "\(vm.selectedLoadouts.count) pack\(vm.selectedLoadouts.count == 1 ? "" : "s") merged")
+
+            DPCard {
+                VStack(alignment: .leading, spacing: DPSpacing.md) {
+                    ForEach(vm.selectedLoadouts) { loadout in
+                        HStack(spacing: DPSpacing.md) {
+                            IconTile(symbol: loadout.symbol, tint: loadout.tint, size: .sm)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(loadout.name)
+                                    .font(.system(size: 15, weight: .bold))
+                                    .foregroundStyle(Color.dpInk)
+                                Text(loadout.schedule)
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .foregroundStyle(Color.dpInk3)
+                            }
+                            Spacer()
+                            if vm.selectedLoadouts.count > 1 {
+                                Button {
+                                    Task { await vm.removeFromToday(loadout) }
+                                } label: {
+                                    Image(systemName: "minus.circle.fill")
+                                        .font(.system(size: 18, weight: .semibold))
+                                        .foregroundStyle(Color.dpInk4)
+                                }
+                                .buttonStyle(.plain)
+                                .accessibilityLabel("Remove \(loadout.name) from today")
+                            }
+                        }
+                    }
+
+                    if !vm.addableLoadouts.isEmpty {
+                        Divider().background(Color.dpHairline)
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: DPSpacing.sm) {
+                                ForEach(vm.addableLoadouts) { loadout in
+                                    Button {
+                                        Task { await vm.addToToday(loadout) }
+                                    } label: {
+                                        Label(loadout.name, systemImage: "plus")
+                                            .font(.system(size: 13, weight: .bold))
+                                            .lineLimit(1)
+                                            .foregroundStyle(Color.dpInk)
+                                            .padding(.horizontal, 12)
+                                            .frame(height: 34)
+                                            .background(
+                                                Capsule()
+                                                    .fill(Color.dpSurfaceAlt)
+                                                    .overlay(Capsule().stroke(Color.dpDivider, lineWidth: 1))
+                                            )
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private func leavingHomeWarning(vm: TodayViewModel) -> some View {
+        DPCard {
+            HStack(alignment: .top, spacing: DPSpacing.md) {
+                Image(systemName: "location.fill")
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundStyle(Color.dpOrange)
+                    .frame(width: 36, height: 36)
+                    .background(Circle().fill(Color.dpOrangeSoft))
+
+                VStack(alignment: .leading, spacing: DPSpacing.xs) {
+                    Text("Check before you leave")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(Color.dpInk)
+                    Text("\(vm.requiredUnpackedItems.count) required item\(vm.requiredUnpackedItems.count == 1 ? "" : "s") still unpacked.")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(Color.dpInk3)
+                    HStack(spacing: 6) {
+                        ForEach(vm.requiredUnpackedItems.prefix(3)) { item in
+                            Pill(text: item.name, style: .warn)
+                        }
+                    }
+                }
+                Spacer(minLength: DPSpacing.sm)
             }
         }
     }
@@ -266,6 +361,83 @@ struct TodayView: View {
         formatter.dateStyle = .medium
         formatter.timeStyle = .none
         return formatter.string(from: date)
+    }
+}
+
+private struct MergedChecklistItemRow: View {
+    let item: Item
+    var isPacked: Bool
+    var sources: [Loadout]
+    var onToggle: () -> Void
+
+    var body: some View {
+        Button(action: onToggle) {
+            HStack(spacing: DPSpacing.md) {
+                CheckboxGlyph(checked: isPacked)
+                IconTile(symbol: item.symbol, tint: item.tint, size: .sm)
+                VStack(alignment: .leading, spacing: 5) {
+                    Text(item.name)
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundStyle(isPacked ? Color.dpInk3 : Color.dpInk)
+                        .strikethrough(isPacked, color: Color.dpInk4)
+
+                    if !sources.isEmpty {
+                        Text("Needed for \(sources.map(\.name).joined(separator: ", "))")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(Color.dpInk3)
+                            .lineLimit(2)
+                    }
+                }
+                Spacer(minLength: 4)
+                if let tag = item.tag {
+                    Pill(text: tag, style: tagStyle(tag, priority: item.priority))
+                }
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .frame(minHeight: 62)
+            .background(
+                RoundedRectangle(cornerRadius: DPRadius.md, style: .continuous)
+                    .fill(item.priority == .high && !isPacked ? Color.dpOrangeMuted : Color.dpSurface)
+            )
+        }
+        .buttonStyle(PressableButtonStyle())
+        .accessibilityLabel(Text(item.name))
+        .accessibilityValue(Text(isPacked ? "packed" : "not packed"))
+        .accessibilityAddTraits(isPacked ? .isSelected : [])
+    }
+
+    private func tagStyle(_ tag: String, priority: Priority) -> Pill.Style {
+        if priority == .high { return .warn }
+        switch tag {
+        case "Don't forget": return .warn
+        case "Always":       return .neutral
+        default:             return .neutral
+        }
+    }
+}
+
+private struct CheckboxGlyph: View {
+    let checked: Bool
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .stroke(Color.dpInk4, lineWidth: 1.6)
+                .frame(width: 26, height: 26)
+                .opacity(checked ? 0 : 1)
+            Circle()
+                .fill(Color.dpGreen)
+                .frame(width: 26, height: 26)
+                .opacity(checked ? 1 : 0)
+                .shadow(color: Color.dpGreen.opacity(0.33), radius: 3, x: 0, y: 2)
+            if checked {
+                Image(systemName: "checkmark")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(.white)
+            }
+        }
+        .animation(.spring(duration: 0.22), value: checked)
     }
 }
 
