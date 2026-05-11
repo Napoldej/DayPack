@@ -37,6 +37,7 @@ struct Item: Identifiable, Hashable, Codable {
     var tint: ItemTint
     var priority: Priority
     var tag: String?
+    var order: Int
 
     init(
         id: UUID = UUID(),
@@ -44,7 +45,8 @@ struct Item: Identifiable, Hashable, Codable {
         symbol: String,
         tint: ItemTint = .orange,
         priority: Priority = .normal,
-        tag: String? = nil
+        tag: String? = nil,
+        order: Int = 0
     ) {
         self.id = id
         self.name = name
@@ -52,5 +54,6 @@ struct Item: Identifiable, Hashable, Codable {
         self.tint = tint
         self.priority = priority
         self.tag = tag
+        self.order = order
     }
 }

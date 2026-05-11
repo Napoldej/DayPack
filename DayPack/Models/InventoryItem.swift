@@ -19,6 +19,13 @@ struct InventoryItem: Identifiable, Hashable, Codable {
     }
 }
 
+extension String {
+    var inventoryMatchKey: String {
+        trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+    }
+}
+
 enum SymbolCatalog {
     static let common: [String] = [
         // Bags & containers

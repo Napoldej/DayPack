@@ -7,6 +7,12 @@ struct Loadout: Identifiable, Hashable, Codable {
     var tint: ItemTint
     var schedule: String
     var itemIDs: [UUID]
+    var scheduledDays: [Int]
+    var isTemporary: Bool
+    var expiresAt: Date?
+    var alertTime: String?
+    var returnAlertTime: String?
+    var isSuggestedForTomorrow: Bool
 
     init(
         id: UUID = UUID(),
@@ -14,7 +20,13 @@ struct Loadout: Identifiable, Hashable, Codable {
         symbol: String,
         tint: ItemTint,
         schedule: String,
-        itemIDs: [UUID] = []
+        itemIDs: [UUID] = [],
+        scheduledDays: [Int] = [],
+        isTemporary: Bool = false,
+        expiresAt: Date? = nil,
+        alertTime: String? = nil,
+        returnAlertTime: String? = nil,
+        isSuggestedForTomorrow: Bool = false
     ) {
         self.id = id
         self.name = name
@@ -22,5 +34,11 @@ struct Loadout: Identifiable, Hashable, Codable {
         self.tint = tint
         self.schedule = schedule
         self.itemIDs = itemIDs
+        self.scheduledDays = scheduledDays
+        self.isTemporary = isTemporary
+        self.expiresAt = expiresAt
+        self.alertTime = alertTime
+        self.returnAlertTime = returnAlertTime
+        self.isSuggestedForTomorrow = isSuggestedForTomorrow
     }
 }
