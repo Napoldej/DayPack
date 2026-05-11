@@ -2,11 +2,16 @@ import SwiftUI
 
 struct ContentView: View {
     @Environment(\.authSession) private var session
+    @AppStorage("hasCompletedSetup") private var hasCompletedSetup = false
 
     var body: some View {
         Group {
             if session.isLoggedIn {
-                MainTabView()
+                if hasCompletedSetup {
+                    MainTabView()
+                } else {
+                    OnboardingSetupView()
+                }
             } else {
                 AuthFlowView()
             }
