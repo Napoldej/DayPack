@@ -10,7 +10,6 @@ struct LoadoutBuilderView: View {
     }
 
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.inventoryStore) private var inventoryStore
 
     @State private var showInventoryPicker = false
 
@@ -25,11 +24,7 @@ struct LoadoutBuilderView: View {
     @State private var returnAlertEnabled = false
     @State private var departureAlertTime = Calendar.current.date(bySettingHour: 7, minute: 30, second: 0, of: Date()) ?? Date()
     @State private var returnAlertTime = Calendar.current.date(bySettingHour: 18, minute: 0, second: 0, of: Date()) ?? Date()
-    @State private var draftItems: [DraftItem] = [
-        DraftItem(name: "Wallet", symbol: "wallet.pass.fill", tint: .orange, isRequired: true),
-        DraftItem(name: "Keys", symbol: "key.fill", tint: .orange, isRequired: true),
-        DraftItem(name: "Water Bottle", symbol: "drop.fill", tint: .blue, isRequired: false),
-    ]
+    @State private var draftItems: [DraftItem] = []
 
     let onCreate: (String, String, ItemTint, String, [Item], Bool, String?, String?) -> Void
 
@@ -82,7 +77,7 @@ struct LoadoutBuilderView: View {
             }
             .sheet(isPresented: $showInventoryPicker) {
                 InventoryPickerSheet(
-                    excludedNames: Set(draftItems.map { $0.name.lowercased() })
+                    excludedNames: Set(draftItems.map { $0.name.inventoryMatchKey })
                 ) { picked in
                     importFromInventory(picked)
                 }
@@ -91,7 +86,9 @@ struct LoadoutBuilderView: View {
     }
 
     private func importFromInventory(_ items: [InventoryItem]) {
+        var existing = Set(draftItems.map { $0.name.inventoryMatchKey })
         for item in items {
+            guard existing.insert(item.name.inventoryMatchKey).inserted else { continue }
             draftItems.append(
                 DraftItem(
                     name: item.name,
@@ -215,28 +212,42 @@ struct LoadoutBuilderView: View {
             }
 
             VStack(spacing: DPSpacing.sm) {
-                ForEach(draftItems) { item in
-                    HStack(spacing: DPSpacing.md) {
-                        IconTile(symbol: item.symbol, tint: item.tint, size: .md)
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(item.name).dpHeadline()
-                            Text(item.isRequired ? "Required" : "Optional")
+                if draftItems.isEmpty {
+                    DPCard {
+                        VStack(alignment: .leading, spacing: DPSpacing.sm) {
+                            Text("No items yet").dpHeadline()
+                            Text("Add items manually or pull regular carry items from Inventory.")
                                 .dpCaption()
                                 .foregroundStyle(Color.dpInk3)
-                        }
-                        Spacer()
-                        Button {
-                            removeItem(item)
-                        } label: {
-                            Image(systemName: "xmark.circle.fill")
-                                .foregroundStyle(Color.dpInk4)
+                            SecondaryButton(title: "From Inventory", icon: "tray.full.fill", size: .md) {
+                                showInventoryPicker = true
+                            }
                         }
                     }
-                    .padding(DPSpacing.md)
-                    .background(
-                        RoundedRectangle(cornerRadius: DPRadius.md, style: .continuous)
-                            .fill(Color.dpSurface)
-                    )
+                } else {
+                    ForEach(draftItems) { item in
+                        HStack(spacing: DPSpacing.md) {
+                            IconTile(symbol: item.symbol, tint: item.tint, size: .md)
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text(item.name).dpHeadline()
+                                Text(item.isRequired ? "Required" : "Optional")
+                                    .dpCaption()
+                                    .foregroundStyle(Color.dpInk3)
+                            }
+                            Spacer()
+                            Button {
+                                removeItem(item)
+                            } label: {
+                                Image(systemName: "xmark.circle.fill")
+                                    .foregroundStyle(Color.dpInk4)
+                            }
+                        }
+                        .padding(DPSpacing.md)
+                        .background(
+                            RoundedRectangle(cornerRadius: DPRadius.md, style: .continuous)
+                                .fill(Color.dpSurface)
+                        )
+                    }
                 }
             }
         }
@@ -244,7 +255,9 @@ struct LoadoutBuilderView: View {
 
     private func addItem() {
         let cleaned = newItemName.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !cleaned.isEmpty else { return }
+        guard !cleaned.isEmpty,
+              !draftItems.contains(where: { $0.name.inventoryMatchKey == cleaned.inventoryMatchKey })
+        else { return }
 
         draftItems.append(
             DraftItem(
