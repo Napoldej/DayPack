@@ -5,6 +5,7 @@ final class StatsViewModel {
     var streak: Int = 0
     var heatmap: [DayStat] = []
     var perLoadout: [LoadoutCompletion] = []
+    var errorMessage: String?
 
     struct LoadoutCompletion: Identifiable, Hashable {
         let id: UUID
@@ -16,21 +17,29 @@ final class StatsViewModel {
 
     init(service: any LoadoutService) {
         self.service = service
-        refresh()
     }
 
-    func refresh() {
-        streak = service.currentStreak()
-        heatmap = service.recentDayStats(days: 30)
-        perLoadout = service.allLoadouts().map { loadout in
-            let entries = service.entries(for: loadout)
-            let packed = entries.filter { $0.isPacked }.count
-            let total = max(entries.count, 1)
-            return LoadoutCompletion(
-                id: loadout.id,
-                loadout: loadout,
-                completion: Double(packed) / Double(total)
-            )
+    func refresh() async {
+        do {
+            streak = try await service.currentStreak()
+            heatmap = try await service.recentDayStats(days: 30)
+            let loadouts = try await service.allLoadouts()
+            var completions: [LoadoutCompletion] = []
+            for loadout in loadouts {
+                let entries = try await service.entries(for: loadout)
+                let packed = entries.filter { $0.isPacked }.count
+                let total = max(entries.count, 1)
+                completions.append(
+                    LoadoutCompletion(
+                        id: loadout.id,
+                        loadout: loadout,
+                        completion: Double(packed) / Double(total)
+                    )
+                )
+            }
+            perLoadout = completions
+        } catch {
+            errorMessage = error.localizedDescription
         }
     }
 

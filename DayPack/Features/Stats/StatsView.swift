@@ -19,6 +19,7 @@ struct StatsView: View {
             if viewModel == nil {
                 viewModel = StatsViewModel(service: service)
             }
+            Task { await viewModel?.refresh() }
         }
     }
 
