@@ -36,13 +36,14 @@ struct PrimaryButton: View {
                     }
                     Text(title)
                         .font(.system(size: size.fontSize, weight: .semibold))
-                        .tracking(-0.2)
                         .opacity(isLoading ? 0 : 1)
                 }
                 if isLoading {
                     ProgressView().tint(.white)
                 }
             }
+            .lineLimit(1)
+            .minimumScaleFactor(0.82)
             .frame(maxWidth: isFullWidth ? .infinity : nil)
             .frame(height: size.height)
             .padding(.horizontal, isFullWidth ? 0 : 22)
@@ -50,6 +51,10 @@ struct PrimaryButton: View {
             .background(
                 RoundedRectangle(cornerRadius: size.radius, style: .continuous)
                     .fill(isDisabled ? Color.dpInk4 : Color.dpOrange)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: size.radius, style: .continuous)
+                            .stroke(Color.white.opacity(isDisabled ? 0 : 0.18), lineWidth: 1)
+                    )
             )
             .dpShadow(isDisabled ? .soft : .brand)
         }

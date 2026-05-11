@@ -35,8 +35,13 @@ struct LoadoutCard: View {
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: DPRadius.xl, style: .continuous)
-                        .stroke(isActive ? Color.dpOrange : .clear, lineWidth: 1.5)
+                        .stroke(isActive ? Color.dpOrange.opacity(0.7) : Color.dpDivider, lineWidth: 1)
                 )
+                .overlay(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: DPRadius.xl, style: .continuous)
+                        .fill(isActive ? Color.dpOrange : Color.dpDivider)
+                        .frame(width: 4)
+                }
                 .dpShadow(.soft)
         }
         .buttonStyle(PressableButtonStyle())
@@ -50,8 +55,7 @@ struct LoadoutCard: View {
                 IconTile(symbol: loadout.symbol, tint: loadout.tint, size: .lg)
                 VStack(alignment: .leading, spacing: 6) {
                     Text(loadout.name)
-                        .font(.system(size: 18, weight: .bold, design: .rounded))
-                        .tracking(-0.3)
+                        .font(.system(size: 18, weight: .bold, design: .default))
                         .foregroundStyle(Color.dpInk)
                     Text("\(itemCount) items · \(loadout.schedule)")
                         .font(.system(size: 12.5))
@@ -61,13 +65,14 @@ struct LoadoutCard: View {
                 Spacer(minLength: 0)
             }
             .padding(DPSpacing.base)
+            .padding(.leading, 4)
 
         case .compact:
             HStack(spacing: DPSpacing.md) {
                 IconTile(symbol: loadout.symbol, tint: loadout.tint, size: .md)
                 VStack(alignment: .leading, spacing: 5) {
                     Text(loadout.name)
-                        .font(.system(size: 16, weight: .bold, design: .rounded))
+                        .font(.system(size: 16, weight: .bold, design: .default))
                     Text("\(itemCount) items · \(loadout.schedule)")
                         .font(.system(size: 12))
                         .foregroundStyle(Color.dpInk3)
@@ -79,6 +84,7 @@ struct LoadoutCard: View {
                     .foregroundStyle(Color.dpInk4)
             }
             .padding(DPSpacing.md)
+            .padding(.leading, 4)
         }
     }
 
@@ -97,7 +103,11 @@ struct LoadoutCard: View {
                     .foregroundStyle(chip.color)
                     .padding(.horizontal, 7)
                     .padding(.vertical, 4)
-                    .background(Capsule().fill(chip.color.opacity(0.12)))
+                    .background(
+                        Capsule()
+                            .fill(chip.color.opacity(0.10))
+                            .overlay(Capsule().stroke(chip.color.opacity(0.16), lineWidth: 1))
+                    )
                 }
             }
         }

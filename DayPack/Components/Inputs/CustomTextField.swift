@@ -36,7 +36,6 @@ struct CustomTextField: View {
                 }
             }
             .font(.system(size: 17, weight: .semibold))
-            .tracking(-0.2)
             .foregroundStyle(Color.dpInk)
             .focused($isFocused)
             .keyboardType(keyboardType)
@@ -60,7 +59,7 @@ struct CustomTextField: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: DPRadius.md, style: .continuous)
-                .stroke(isFocused ? Color.dpOrange : .clear, lineWidth: 2)
+                .stroke(isFocused ? Color.dpOrange : Color.dpDivider, lineWidth: 1)
         )
         .dpShadow(.soft)
     }

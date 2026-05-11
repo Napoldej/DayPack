@@ -6,7 +6,7 @@ struct SecondaryButton: View {
 
         var background: Color {
             switch self {
-            case .soft:   return Color.dpOrangeSoft
+            case .soft:   return Color.dpSurface
             case .ghost:  return .clear
             case .danger: return Color.dpRedSoft
             }
@@ -37,8 +37,9 @@ struct SecondaryButton: View {
                 }
                 Text(title)
                     .font(.system(size: size.fontSize, weight: .semibold))
-                    .tracking(-0.2)
             }
+            .lineLimit(1)
+            .minimumScaleFactor(0.82)
             .frame(maxWidth: isFullWidth ? .infinity : nil)
             .frame(height: size.height)
             .padding(.horizontal, isFullWidth ? 0 : 22)
@@ -46,6 +47,10 @@ struct SecondaryButton: View {
             .background(
                 RoundedRectangle(cornerRadius: size.radius, style: .continuous)
                     .fill(variant.background)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: size.radius, style: .continuous)
+                            .stroke(variant == .ghost ? .clear : Color.dpDivider, lineWidth: 1)
+                    )
             )
         }
         .buttonStyle(PressableButtonStyle())

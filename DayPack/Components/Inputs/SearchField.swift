@@ -28,6 +28,10 @@ struct SearchField: View {
             RoundedRectangle(cornerRadius: DPRadius.md, style: .continuous)
                 .fill(Color.dpSurface)
         )
+        .overlay(
+            RoundedRectangle(cornerRadius: DPRadius.md, style: .continuous)
+                .stroke(Color.dpDivider, lineWidth: 1)
+        )
         .dpShadow(.soft)
     }
 }

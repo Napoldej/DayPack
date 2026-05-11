@@ -18,7 +18,6 @@ struct ChecklistItemRow: View {
                 VStack(alignment: .leading, spacing: 1) {
                     Text(item.name)
                         .font(.system(size: 16, weight: .medium))
-                        .tracking(-0.2)
                         .foregroundStyle(isPacked ? Color.dpInk3 : Color.dpInk)
                         .strikethrough(isPacked, color: Color.dpInk4)
                 }

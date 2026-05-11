@@ -38,6 +38,10 @@ struct IconTile: View {
             .fill(tint.background)
             .frame(width: size.dimension, height: size.dimension)
             .overlay(
+                RoundedRectangle(cornerRadius: size.radius, style: .continuous)
+                    .stroke(Color.white.opacity(0.75), lineWidth: 1)
+            )
+            .overlay(
                 Image(systemName: symbol)
                     .font(.system(size: size.iconSize, weight: .semibold))
                     .foregroundStyle(tint.foreground)

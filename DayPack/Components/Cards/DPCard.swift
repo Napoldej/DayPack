@@ -14,6 +14,10 @@ struct DPCard<Content: View>: View {
                 RoundedRectangle(cornerRadius: radius, style: .continuous)
                     .fill(background)
             )
+            .overlay(
+                RoundedRectangle(cornerRadius: radius, style: .continuous)
+                    .stroke(Color.dpDivider, lineWidth: 1)
+            )
             .dpShadow(shadow)
     }
 }
