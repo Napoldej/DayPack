@@ -10,29 +10,33 @@ extension Color {
 }
 
 extension Color {
-    static let dpOrange      = Color(hex: 0xFF6B2C)
-    static let dpOrangeDeep  = Color(hex: 0xE8531A)
-    static let dpOrangeSoft  = Color(hex: 0xFFE9DC)
-    static let dpOrangeMuted = Color(hex: 0xFFF4ED)
+    static let dpOrange      = Color(hex: 0xF26A3D)
+    static let dpOrangeDeep  = Color(hex: 0xC94821)
+    static let dpOrangeSoft  = Color(hex: 0xFCE8DF)
+    static let dpOrangeMuted = Color(hex: 0xFFF6F1)
 
-    static let dpGreen       = Color(hex: 0x2FBF71)
-    static let dpGreenSoft   = Color(hex: 0xE5F7EC)
+    static let dpGreen       = Color(hex: 0x1F9D7A)
+    static let dpGreenSoft   = Color(hex: 0xE1F5EF)
     static let dpRed         = Color(hex: 0xE5484D)
     static let dpRedSoft     = Color(hex: 0xFFEBEC)
-    static let dpAmber       = Color(hex: 0xF5A524)
-    static let dpAmberSoft   = Color(hex: 0xFFF3DC)
+    static let dpAmber       = Color(hex: 0xC98312)
+    static let dpAmberSoft   = Color(hex: 0xFFF1D7)
+    static let dpBlue        = Color(hex: 0x2F6FED)
+    static let dpBlueSoft    = Color(hex: 0xE8F0FF)
+    static let dpTeal        = Color(hex: 0x158A9A)
+    static let dpTealSoft    = Color(hex: 0xDFF4F6)
 
-    static let dpBg          = Color(hex: 0xF7F5F2)
-    static let dpBgGrouped   = Color(hex: 0xF2EFEA)
+    static let dpBg          = Color(hex: 0xF5F7FA)
+    static let dpBgGrouped   = Color(hex: 0xE9EEF5)
     static let dpSurface     = Color(hex: 0xFFFFFF)
-    static let dpSurfaceAlt  = Color(hex: 0xFAF8F5)
+    static let dpSurfaceAlt  = Color(hex: 0xF8FAFC)
 
-    static let dpInk         = Color(hex: 0x1B1B1F)
-    static let dpInk2        = Color(hex: 0x3C3C43)
-    static let dpInk3        = Color(hex: 0x3C3C43, alpha: 0.6)
-    static let dpInk4        = Color(hex: 0x3C3C43, alpha: 0.36)
-    static let dpHairline    = Color(hex: 0x3C3C43, alpha: 0.10)
-    static let dpDivider     = Color(hex: 0x3C3C43, alpha: 0.06)
+    static let dpInk         = Color(hex: 0x172033)
+    static let dpInk2        = Color(hex: 0x334155)
+    static let dpInk3        = Color(hex: 0x64748B)
+    static let dpInk4        = Color(hex: 0x94A3B8)
+    static let dpHairline    = Color(hex: 0xCBD5E1)
+    static let dpDivider     = Color(hex: 0xE2E8F0)
 }
 
 #Preview("Color tokens") {

@@ -20,11 +20,11 @@ struct DPTrackedFont: ViewModifier {
 }
 
 extension View {
-    func dpDisplay()  -> some View { modifier(DPTrackedFont(font: .dpDisplay,  tracking: -1.6)) }
-    func dpTitle1()   -> some View { modifier(DPTrackedFont(font: .dpTitle1,   tracking: -0.8)) }
-    func dpTitle2()   -> some View { modifier(DPTrackedFont(font: .dpTitle2,   tracking: -0.4)) }
-    func dpHeadline() -> some View { modifier(DPTrackedFont(font: .dpHeadline, tracking: -0.2)) }
-    func dpBody()     -> some View { modifier(DPTrackedFont(font: .dpBody,     tracking: -0.2)) }
+    func dpDisplay()  -> some View { modifier(DPTrackedFont(font: .dpDisplay,  tracking: 0)) }
+    func dpTitle1()   -> some View { modifier(DPTrackedFont(font: .dpTitle1,   tracking: 0)) }
+    func dpTitle2()   -> some View { modifier(DPTrackedFont(font: .dpTitle2,   tracking: 0)) }
+    func dpHeadline() -> some View { modifier(DPTrackedFont(font: .dpHeadline, tracking: 0)) }
+    func dpBody()     -> some View { modifier(DPTrackedFont(font: .dpBody,     tracking: 0)) }
     func dpSubhead()  -> some View { modifier(DPTrackedFont(font: .dpSubhead,  tracking:  0)) }
     func dpCaption()  -> some View { modifier(DPTrackedFont(font: .dpCaption,  tracking:  0)) }
 

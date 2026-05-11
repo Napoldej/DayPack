@@ -11,19 +11,19 @@ struct DPShadow: ViewModifier {
         switch style {
         case .soft:
             content
-                .shadow(color: Color.black.opacity(0.04), radius: 1,  x: 0, y: 1)
-                .shadow(color: Color.black.opacity(0.05), radius: 12, x: 0, y: 8)
+                .shadow(color: Color.black.opacity(0.035), radius: 1, x: 0, y: 1)
+                .shadow(color: Color.black.opacity(0.035), radius: 8, x: 0, y: 5)
         case .card:
             content
-                .shadow(color: Color.black.opacity(0.05), radius: 1,  x: 0, y: 1)
-                .shadow(color: Color.black.opacity(0.07), radius: 16, x: 0, y: 12)
+                .shadow(color: Color.black.opacity(0.045), radius: 1, x: 0, y: 1)
+                .shadow(color: Color.black.opacity(0.055), radius: 12, x: 0, y: 8)
         case .pop:
             content
-                .shadow(color: Color.black.opacity(0.08), radius: 6,  x: 0, y: 6)
-                .shadow(color: Color.black.opacity(0.14), radius: 28, x: 0, y: 24)
+                .shadow(color: Color.black.opacity(0.08), radius: 5, x: 0, y: 4)
+                .shadow(color: Color.black.opacity(0.12), radius: 22, x: 0, y: 16)
         case .brand:
             content
-                .shadow(color: Color.dpOrange.opacity(0.30), radius: 8, x: 0, y: 6)
+                .shadow(color: Color.dpOrange.opacity(0.22), radius: 10, x: 0, y: 6)
         }
     }
 }

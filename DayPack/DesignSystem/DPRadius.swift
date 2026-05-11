@@ -1,10 +1,10 @@
 import CoreGraphics
 
 enum DPRadius {
-    static let sm:   CGFloat = 8
-    static let md:   CGFloat = 14
-    static let lg:   CGFloat = 18
-    static let xl:   CGFloat = 22
-    static let xxl:  CGFloat = 28
+    static let sm:   CGFloat = 6
+    static let md:   CGFloat = 8
+    static let lg:   CGFloat = 8
+    static let xl:   CGFloat = 8
+    static let xxl:  CGFloat = 8
     static let full: CGFloat = 999
 }
