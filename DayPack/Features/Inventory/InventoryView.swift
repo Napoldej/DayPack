@@ -44,8 +44,11 @@ struct InventoryView: View {
                 if !store.items.isEmpty {
                     ToolbarItem(placement: .topBarTrailing) {
                         Button { showCreate = true } label: {
-                            Image(systemName: "plus.circle.fill")
-                                .foregroundStyle(Color.dpOrange)
+                            Image(systemName: "plus")
+                                .font(.system(size: 15, weight: .bold))
+                                .foregroundStyle(.white)
+                                .frame(width: 30, height: 30)
+                                .background(RoundedRectangle(cornerRadius: DPRadius.md, style: .continuous).fill(Color.dpOrange))
                         }
                     }
                 }
@@ -80,6 +83,10 @@ struct InventoryView: View {
                     .background(
                         RoundedRectangle(cornerRadius: DPRadius.lg, style: .continuous)
                             .fill(Color.dpSurface)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: DPRadius.lg, style: .continuous)
+                                    .stroke(Color.dpDivider, lineWidth: 1)
+                            )
                     )
                     .dpShadow(.soft)
                 }

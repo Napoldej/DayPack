@@ -34,7 +34,15 @@ struct InventoryItemEditorView: View {
     }
 
     private var canSave: Bool {
-        !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let key = name.inventoryMatchKey
+        guard !key.isEmpty else { return false }
+        return !store.items.contains { item in
+            guard item.name.inventoryMatchKey == key else { return false }
+            if case .edit(let existing) = mode {
+                return item.id != existing.id
+            }
+            return true
+        }
     }
 
     var body: some View {

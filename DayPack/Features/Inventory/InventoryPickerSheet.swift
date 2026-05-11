@@ -11,10 +11,11 @@ struct InventoryPickerSheet: View {
     @State private var searchText: String = ""
 
     private var filtered: [InventoryItem] {
-        let pool = store.items.filter { !excludedNames.contains($0.name.lowercased()) }
+        let normalizedExclusions = Set(excludedNames.map(\.inventoryMatchKey))
+        let pool = store.items.filter { !normalizedExclusions.contains($0.name.inventoryMatchKey) }
         guard !searchText.isEmpty else { return pool }
-        let q = searchText.lowercased()
-        return pool.filter { $0.name.lowercased().contains(q) }
+        let q = searchText.inventoryMatchKey
+        return pool.filter { $0.name.inventoryMatchKey.contains(q) }
     }
 
     var body: some View {
