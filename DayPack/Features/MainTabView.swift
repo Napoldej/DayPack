@@ -5,8 +5,9 @@ struct MainTabView: View {
 
     init() {
         let appearance = UITabBarAppearance()
-        appearance.configureWithDefaultBackground()
-        appearance.backgroundColor = UIColor.white.withAlphaComponent(0.92)
+        appearance.configureWithOpaqueBackground()
+        appearance.backgroundColor = UIColor(Color.dpSurface)
+        appearance.shadowColor = UIColor(Color.dpDivider)
         UITabBar.appearance().standardAppearance = appearance
         UITabBar.appearance().scrollEdgeAppearance = appearance
     }
