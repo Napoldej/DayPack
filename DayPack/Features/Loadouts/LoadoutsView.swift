@@ -1,14 +1,11 @@
 import SwiftUI
 
 struct LoadoutsView: View {
-    @Environment(\.apiClient) private var api
-    @Environment(\.authSession) private var session
     @Environment(\.loadoutService) private var service
     @State private var viewModel: LoadoutsViewModel?
     @State private var showBuilder = false
+    @State private var showGallery = false
     @State private var editingLoadout: Loadout?
-    @State private var shareSheet: LoadoutShareSheet?
-    @State private var shareError: String?
 
     var body: some View {
         NavigationStack {
@@ -34,6 +31,19 @@ struct LoadoutsView: View {
             .navigationTitle("Loadouts")
             .toolbarBackground(Color.dpBg, for: .navigationBar)
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        showGallery = true
+                    } label: {
+                        Image(systemName: "square.grid.2x2.fill")
+                            .font(.system(size: 15, weight: .bold))
+                            .foregroundStyle(Color.dpInk2)
+                            .frame(width: 30, height: 30)
+                            .background(RoundedRectangle(cornerRadius: DPRadius.md, style: .continuous).fill(Color.dpSurfaceAlt))
+                    }
+                    .accessibilityLabel("Shared packs gallery")
+                }
+
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         showBuilder = true
@@ -66,15 +76,33 @@ struct LoadoutsView: View {
                     }
                 }
             }
+            .sheet(isPresented: $showGallery, onDismiss: {
+                Task { await viewModel?.refresh() }
+            }) {
+                if let vm = viewModel {
+                    SharedPacksGalleryView { template in
+                        Task {
+                            await vm.createLoadout(
+                                name: template.name,
+                                symbol: template.symbol,
+                                tint: template.tint,
+                                schedule: "Manual",
+                                items: template.items,
+                                isTemporary: false,
+                                alertTime: nil,
+                                returnAlertTime: nil
+                            )
+                            showGallery = false
+                        }
+                    }
+                }
+            }
             .sheet(item: $editingLoadout, onDismiss: {
                 Task { await viewModel?.refresh() }
             }) { loadout in
                 LoadoutEditorView(loadout: loadout) {
                     Task { await viewModel?.refresh() }
                 }
-            }
-            .sheet(item: $shareSheet) { sheet in
-                loadoutShareSheet(sheet)
             }
         }
         .onAppear {
@@ -147,11 +175,6 @@ struct LoadoutsView: View {
                 } label: {
                     Label("Use Today", systemImage: "checkmark.circle")
                 }
-                Button {
-                    Task { await generateShareCode(for: loadout) }
-                } label: {
-                    Label("Share Code", systemImage: "square.and.arrow.up")
-                }
                 Button(role: .destructive) {
                     Task { await vm.deleteLoadout(loadout) }
                 } label: {
@@ -174,79 +197,132 @@ struct LoadoutsView: View {
             .accessibilityLabel("Loadout actions")
         }
     }
-
-    private func loadoutShareSheet(_ sheet: LoadoutShareSheet) -> some View {
-        NavigationStack {
-            VStack(spacing: DPSpacing.lg) {
-                IconTile(symbol: sheet.loadout.symbol, tint: sheet.loadout.tint, size: .lg)
-                VStack(spacing: DPSpacing.xs) {
-                    Text(sheet.loadout.name)
-                        .font(.system(size: 22, weight: .bold, design: .rounded))
-                        .foregroundStyle(Color.dpInk)
-                    Text("Share this code with a friend")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(Color.dpInk3)
-                }
-
-                Text(sheet.code)
-                    .font(.system(size: 36, weight: .black, design: .rounded))
-                    .foregroundStyle(Color.dpInk)
-                    .textSelection(.enabled)
-                    .padding(.vertical, DPSpacing.md)
-                    .frame(maxWidth: .infinity)
-                    .background(RoundedRectangle(cornerRadius: DPRadius.lg, style: .continuous).fill(Color.dpSurface))
-
-                HStack(spacing: DPSpacing.sm) {
-                    SecondaryButton(title: "Copy", icon: "doc.on.doc", size: .md) {
-                        UIPasteboard.general.string = sheet.code
-                    }
-                    ShareLink(item: "Import my DayPack loadout with code \(sheet.code)") {
-                        Label("Share", systemImage: "square.and.arrow.up")
-                            .font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(Color.dpInk)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 12)
-                            .background(RoundedRectangle(cornerRadius: DPRadius.md, style: .continuous).fill(Color.dpSurfaceAlt))
-                    }
-                }
-
-                Spacer()
-            }
-            .padding(DPSpacing.lg)
-            .background(Color.dpBg.ignoresSafeArea())
-            .navigationTitle("Share Pack")
-            .navigationBarTitleDisplayMode(.inline)
-        }
-    }
-
-    private func generateShareCode(for loadout: Loadout) async {
-        guard let userID = session.currentUser?.id else { return }
-        shareError = nil
-        do {
-            let response: LoadoutShareCodeResponse = try await api.post(
-                "/share-codes",
-                body: LoadoutShareCodeCreateBody(loadoutID: loadout.id),
-                query: [URLQueryItem(name: "userID", value: userID.uuidString)]
-            )
-            shareSheet = LoadoutShareSheet(loadout: loadout, code: response.code)
-        } catch {
-            shareError = error.localizedDescription
-        }
-    }
 }
 
-private struct LoadoutShareSheet: Identifiable {
+private struct SharedPackTemplate: Identifiable {
     let id = UUID()
-    let loadout: Loadout
-    let code: String
+    let name: String
+    let symbol: String
+    let tint: ItemTint
+    let summary: String
+    let items: [Item]
 }
 
-private struct LoadoutShareCodeCreateBody: Encodable {
-    let loadoutID: UUID
-}
+private struct SharedPacksGalleryView: View {
+    @Environment(\.dismiss) private var dismiss
+    let onImport: (SharedPackTemplate) -> Void
 
-private struct LoadoutShareCodeResponse: Decodable {
-    let code: String
+    private let templates: [SharedPackTemplate] = [
+        SharedPackTemplate(
+            name: "Minimal Work Pack",
+            symbol: "briefcase.fill",
+            tint: .orange,
+            summary: "Lean office carry for laptop days.",
+            items: [
+                Item(name: "Laptop", symbol: "laptopcomputer", tint: .purple, priority: .high, tag: "Always"),
+                Item(name: "Charger", symbol: "powerplug.fill", tint: .green, priority: .high, tag: "Always"),
+                Item(name: "Badge", symbol: "person.text.rectangle.fill", tint: .orange, priority: .high, tag: "Always"),
+                Item(name: "Notebook", symbol: "book.closed.fill", tint: .green),
+                Item(name: "Water Bottle", symbol: "drop.fill", tint: .blue),
+            ]
+        ),
+        SharedPackTemplate(
+            name: "Gym Pack",
+            symbol: "dumbbell.fill",
+            tint: .purple,
+            summary: "After-work gym essentials.",
+            items: [
+                Item(name: "Gym Shoes", symbol: "shoeprints.fill", tint: .green, priority: .high, tag: "Always"),
+                Item(name: "Gym Clothes", symbol: "tshirt.fill", tint: .blue, priority: .high, tag: "Always"),
+                Item(name: "Towel", symbol: "square.fill", tint: .teal),
+                Item(name: "Water Bottle", symbol: "drop.fill", tint: .blue),
+                Item(name: "Protein Shake", symbol: "drop.halffull", tint: .red, tag: "Optional"),
+            ]
+        ),
+        SharedPackTemplate(
+            name: "Student Daily",
+            symbol: "book.closed.fill",
+            tint: .green,
+            summary: "Class day basics without overpacking.",
+            items: [
+                Item(name: "Notebook", symbol: "book.closed.fill", tint: .green, priority: .high, tag: "Always"),
+                Item(name: "Laptop", symbol: "laptopcomputer", tint: .purple),
+                Item(name: "Charger", symbol: "powerplug.fill", tint: .green, priority: .high, tag: "Always"),
+                Item(name: "Pen", symbol: "pencil", tint: .orange),
+                Item(name: "Water Bottle", symbol: "drop.fill", tint: .blue),
+            ]
+        ),
+        SharedPackTemplate(
+            name: "Bangkok Rainy Season",
+            symbol: "cloud.rain.fill",
+            tint: .blue,
+            summary: "Fast add-on for wet commutes.",
+            items: [
+                Item(name: "Umbrella", symbol: "umbrella.fill", tint: .blue, priority: .high, tag: "Always"),
+                Item(name: "Light Jacket", symbol: "jacket.fill", tint: .teal),
+                Item(name: "Dry Bag", symbol: "bag.fill", tint: .orange),
+                Item(name: "Tissues", symbol: "leaf.fill", tint: .green),
+            ]
+        ),
+        SharedPackTemplate(
+            name: "Creator Bag",
+            symbol: "camera.fill",
+            tint: .teal,
+            summary: "Small shoot kit for cafe or street days.",
+            items: [
+                Item(name: "Camera", symbol: "camera.fill", tint: .teal, priority: .high, tag: "Always"),
+                Item(name: "Battery", symbol: "battery.100percent", tint: .green, priority: .high, tag: "Always"),
+                Item(name: "Memory Card", symbol: "sdcard.fill", tint: .orange, priority: .high, tag: "Always"),
+                Item(name: "Lens Cloth", symbol: "sparkles", tint: .blue),
+            ]
+        ),
+    ]
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: DPSpacing.md) {
+                    ForEach(templates) { template in
+                        Button {
+                            onImport(template)
+                        } label: {
+                            DPCard {
+                                HStack(spacing: DPSpacing.md) {
+                                    IconTile(symbol: template.symbol, tint: template.tint, size: .md)
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text(template.name)
+                                            .font(.system(size: 16, weight: .bold))
+                                            .foregroundStyle(Color.dpInk)
+                                        Text(template.summary)
+                                            .font(.system(size: 13, weight: .semibold))
+                                            .foregroundStyle(Color.dpInk3)
+                                        Text("\(template.items.count) items")
+                                            .font(.system(size: 12, weight: .bold))
+                                            .foregroundStyle(Color.dpOrange)
+                                    }
+                                    Spacer()
+                                    Image(systemName: "plus.circle.fill")
+                                        .font(.system(size: 22, weight: .bold))
+                                        .foregroundStyle(Color.dpOrange)
+                                }
+                            }
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(DPSpacing.lg)
+            }
+            .background(Color.dpBg)
+            .navigationTitle("Shared Packs")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Close") { dismiss() }
+                        .foregroundStyle(Color.dpInk2)
+                }
+            }
+        }
+    }
 }
 
 #Preview {
