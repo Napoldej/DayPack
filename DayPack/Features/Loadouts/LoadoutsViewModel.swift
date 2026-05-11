@@ -44,6 +44,7 @@ final class LoadoutsViewModel {
         do {
             try await service.setTodaysLoadout(id: loadout.id)
             todaysLoadoutID = loadout.id
+            TodayStackStorage.saveIDs([loadout.id])
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -80,6 +81,7 @@ final class LoadoutsViewModel {
                 alertTime: alertTime,
                 returnAlertTime: returnAlertTime
             )
+            TodayStackStorage.saveIDs([loadout.id])
             await refresh()
             return loadout
         } catch {
