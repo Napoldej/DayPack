@@ -1,7 +1,7 @@
 import Foundation
 import SwiftUI
 
-struct AuthUser: Codable, Hashable {
+struct AuthUser: Identifiable, Codable, Hashable {
     let id: UUID
     let name: String
     let email: String
@@ -58,6 +58,7 @@ final class AuthSession {
             tokenStore.save(response.token)
             cacheUser(response.user)
             currentUser = response.user
+            InventoryStore.shared.reload()
         }
     }
 
@@ -71,6 +72,7 @@ final class AuthSession {
             tokenStore.save(response.token)
             cacheUser(response.user)
             currentUser = response.user
+            InventoryStore.shared.reload()
         }
     }
 
@@ -78,6 +80,27 @@ final class AuthSession {
         tokenStore.clear()
         UserDefaults.standard.removeObject(forKey: cachedUserKey)
         currentUser = nil
+        InventoryStore.shared.reload()
+    }
+
+    func updateAccount(name: String, email: String) async {
+        guard let userID = currentUser?.id else { return }
+        await perform {
+            let user: AuthUser = try await api.put(
+                "/users/\(userID.uuidString)",
+                body: UserUpdateBody(name: name, email: email, password: nil)
+            )
+            cacheUser(user)
+            currentUser = user
+        }
+    }
+
+    func deleteAccount() async {
+        guard let userID = currentUser?.id else { return }
+        await perform {
+            try await api.delete("/users/\(userID.uuidString)")
+            logout()
+        }
     }
 
     private func perform(_ work: @MainActor () async throws -> Void) async {
@@ -108,6 +131,12 @@ final class AuthSession {
         else { return }
         currentUser = user
     }
+}
+
+private struct UserUpdateBody: Encodable {
+    let name: String?
+    let email: String?
+    let password: String?
 }
 
 private struct AuthSessionKey: EnvironmentKey {
