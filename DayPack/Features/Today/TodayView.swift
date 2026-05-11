@@ -2,6 +2,7 @@ import SwiftUI
 
 struct TodayView: View {
     @Environment(\.loadoutService) private var service
+    @Environment(\.homeLocationService) private var homeLocationService
     @State private var viewModel: TodayViewModel?
     @State private var showWalkOut = false
 
@@ -33,25 +34,17 @@ struct TodayView: View {
             } else {
                 Task { await viewModel?.refresh() }
             }
+            homeLocationService.refreshLocationState()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .dayPackOpenWalkOut)) { _ in
+            showWalkOut = true
         }
     }
 
     @ViewBuilder
     private func content(vm: TodayViewModel) -> some View {
         VStack(alignment: .leading, spacing: DPSpacing.lg) {
-            HStack(spacing: 8) {
-                Circle().fill(Color.dpGreen).frame(width: 8, height: 8)
-                Text("At Home · ready to leave anytime")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(Color.dpInk2)
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .background(Capsule().fill(Color.dpGreenSoft))
-
-            Text(subtitle)
-                .dpSubhead()
-                .foregroundStyle(Color.dpInk3)
+            todayHeader(vm: vm)
 
             if let loadout = vm.loadout {
                 LoadoutCard(loadout: loadout, itemCount: vm.totalCount, isActive: true)
@@ -106,6 +99,69 @@ struct TodayView: View {
         }
         .padding(.horizontal, DPSpacing.lg)
         .padding(.bottom, DPSpacing.xxl)
+    }
+
+    private func todayHeader(vm: TodayViewModel) -> some View {
+        DPCard(padding: DPSpacing.lg, shadow: .soft) {
+            HStack(alignment: .top, spacing: DPSpacing.md) {
+                VStack(alignment: .leading, spacing: DPSpacing.sm) {
+                    HStack(spacing: 8) {
+                        Circle().fill(locationStatusColor).frame(width: 8, height: 8)
+                        Text(locationStatusText)
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundStyle(locationStatusColor)
+                    }
+
+                    Text(subtitle)
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(Color.dpInk3)
+
+                    Text(vm.loadout?.name ?? "No active loadout")
+                        .font(.system(size: 28, weight: .bold))
+                        .foregroundStyle(Color.dpInk)
+                        .lineLimit(2)
+                }
+
+                Spacer(minLength: DPSpacing.md)
+
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text("\(vm.packedCount)")
+                        .font(.system(size: 34, weight: .black))
+                        .foregroundStyle(Color.dpOrange)
+                    Text("of \(vm.totalCount)")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(Color.dpInk3)
+                }
+                .accessibilityLabel("\(vm.packedCount) of \(vm.totalCount) packed")
+            }
+        }
+    }
+
+    private var locationStatusText: String {
+        guard homeLocationService.hasHomeLocation else { return "Home not set" }
+        switch homeLocationService.presence {
+        case .atHome:
+            return "At home"
+        case .away:
+            return "Away from home"
+        case .unavailable:
+            return "Location unavailable"
+        case .unknown:
+            return "Checking location"
+        }
+    }
+
+    private var locationStatusColor: Color {
+        switch homeLocationService.presence {
+        case .atHome:
+            return Color.dpGreen
+        case .away:
+            return Color.dpOrange
+        case .unavailable:
+            return Color.dpRed
+        case .unknown:
+            return Color.dpInk3
+        }
     }
 
     @ViewBuilder

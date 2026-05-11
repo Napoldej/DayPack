@@ -4,6 +4,8 @@ struct WalkOutChecklistView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.loadoutService) private var service
     @State private var viewModel: TodayViewModel?
+    @State private var showSuccess = false
+    @State private var completedCount = 0
 
     private var allRequiredPacked: Bool {
         guard let vm = viewModel else { return false }
@@ -42,7 +44,11 @@ struct WalkOutChecklistView: View {
                         icon: allRequiredPacked ? "checkmark" : nil,
                         isDisabled: !allRequiredPacked
                     ) {
-                        dismiss()
+                        Task {
+                            completedCount = vm.packedCount
+                            await vm.completeCheck()
+                            showSuccess = true
+                        }
                     }
                     .padding(.horizontal, DPSpacing.lg)
                     .padding(.vertical, DPSpacing.md)
@@ -65,8 +71,15 @@ struct WalkOutChecklistView: View {
         .onAppear {
             if viewModel == nil {
                 viewModel = TodayViewModel(service: service)
+                Task { await viewModel?.refresh() }
             } else {
-                viewModel?.refresh()
+                Task { await viewModel?.refresh() }
+            }
+        }
+        .fullScreenCover(isPresented: $showSuccess) {
+            PerfectDepartureView(packedCount: completedCount) {
+                showSuccess = false
+                dismiss()
             }
         }
     }
@@ -85,7 +98,7 @@ struct WalkOutChecklistView: View {
                         ChecklistItemRow(
                             item: item,
                             isPacked: vm.entry(for: item)?.isPacked ?? false,
-                            onToggle: { vm.togglePacked(for: item) }
+                            onToggle: { Task { await vm.togglePacked(for: item) } }
                         )
                     }
                 }
