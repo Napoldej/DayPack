@@ -37,6 +37,9 @@ func routes(_ app: Application) throws {
     try protected.register(collection: SharedPackController(
         service: SharedPackService(repository: SharedPackRepository())
     ))
+    try protected.register(collection: ShareCodeController(
+        service: ShareCodeService(repository: ShareCodeRepository())
+    ))
     try protected.register(collection: TomorrowSuggestionController(
         service: TomorrowSuggestionService(repository: LoadoutRepository())
     ))
