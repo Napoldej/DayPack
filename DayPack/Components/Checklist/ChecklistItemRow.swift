@@ -6,7 +6,7 @@ struct ChecklistItemRow: View {
     var onToggle: () -> Void
 
     private var rowBackground: Color {
-        if item.priority == .high && !isPacked { return Color(hex: 0xFFF7F4) }
+        if item.priority == .high && !isPacked { return Color.dpOrangeMuted }
         return Color.dpSurface
     }
 

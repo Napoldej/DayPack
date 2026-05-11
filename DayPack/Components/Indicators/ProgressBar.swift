@@ -30,7 +30,7 @@ struct ProgressBar: View {
             }
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
-                    Capsule().fill(Color(hex: 0xF0EAE2))
+                    Capsule().fill(Color.dpBgGrouped)
                     Capsule()
                         .fill(LinearGradient(
                             colors: [Color.dpOrange, Color.dpOrangeDeep],

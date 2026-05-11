@@ -4,7 +4,7 @@ struct ProgressRing: View {
     var value: Double
     var size: CGFloat = 64
     var lineWidth: CGFloat = 6
-    var trackColor: Color = Color(hex: 0xF0EAE2)
+    var trackColor: Color = Color.dpBgGrouped
     var fillColor: Color = .dpOrange
     var label: String? = nil
 
