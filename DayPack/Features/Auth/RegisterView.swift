@@ -34,6 +34,9 @@ struct RegisterView: View {
 
             ScrollView {
                 VStack(spacing: DPSpacing.lg) {
+                    IconTile(symbol: "backpack.fill", tint: .orange, size: .lg)
+                        .padding(.top, DPSpacing.lg)
+
                     VStack(spacing: 6) {
                         Text("Create your account").dpTitle1()
                             .multilineTextAlignment(.center)
@@ -41,7 +44,6 @@ struct RegisterView: View {
                             .font(.system(size: 16))
                             .foregroundStyle(Color.dpInk3)
                     }
-                    .padding(.top, DPSpacing.lg)
 
                     VStack(spacing: DPSpacing.md) {
                         CustomTextField(

@@ -8,41 +8,27 @@ struct OnboardingWelcomeView: View {
         VStack(spacing: 0) {
             Spacer()
 
-            ZStack {
-                Circle()
-                    .fill(
-                        RadialGradient(
-                            colors: [Color.dpOrange.opacity(0.18), Color.dpOrange.opacity(0)],
-                            center: .center,
-                            startRadius: 0,
-                            endRadius: 110
-                        )
-                    )
-                    .frame(width: 220, height: 220)
-
-                RoundedRectangle(cornerRadius: 32, style: .continuous)
-                    .fill(Color.dpSurface)
-                    .frame(width: 120, height: 120)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 32, style: .continuous)
-                            .stroke(Color.dpOrangeSoft, lineWidth: 1.5)
-                    )
-                    .overlay(
-                        Image(systemName: "backpack.fill")
-                            .font(.system(size: 56, weight: .regular))
-                            .foregroundStyle(Color.dpOrange)
-                    )
-                    .shadow(color: Color.dpOrange.opacity(0.20), radius: 20, x: 0, y: 16)
+            DPCard(padding: 18, shadow: .card) {
+                HStack(spacing: DPSpacing.md) {
+                    IconTile(symbol: "backpack.fill", tint: .orange, size: .lg)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("DayPack")
+                            .font(.system(size: 22, weight: .black))
+                            .foregroundStyle(Color.dpInk)
+                        Text("Daily carry, checked")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(Color.dpInk3)
+                    }
+                    Spacer()
+                }
             }
             .padding(.bottom, DPSpacing.xl)
 
             VStack(spacing: DPSpacing.md) {
-                Text("Never Forget\nAgain")
-                    .font(.system(size: 36, weight: .heavy, design: .rounded))
-                    .tracking(-1)
+                Text("Leave with the right things.")
+                    .font(.system(size: 36, weight: .heavy))
                     .multilineTextAlignment(.center)
-                    .lineSpacing(-2)
-                Text("Your smart daily-loadout companion. Pack with confidence, leave with peace of mind.")
+                Text("Plan loadouts, reuse your inventory, and run a quick check before you go.")
                     .font(.system(size: 16))
                     .foregroundStyle(Color.dpInk3)
                     .multilineTextAlignment(.center)

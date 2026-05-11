@@ -92,21 +92,8 @@ struct LoginView: View {
     }
 
     private var hero: some View {
-        VStack(spacing: DPSpacing.md) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 22, style: .continuous)
-                    .fill(Color.dpSurface)
-                    .frame(width: 80, height: 80)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 22, style: .continuous)
-                            .stroke(Color.dpOrangeSoft, lineWidth: 1.5)
-                    )
-                Image(systemName: "backpack.fill")
-                    .font(.system(size: 36, weight: .regular))
-                    .foregroundStyle(Color.dpOrange)
-            }
-            .shadow(color: Color.dpOrange.opacity(0.20), radius: 16, x: 0, y: 12)
-
+        VStack(spacing: DPSpacing.lg) {
+            IconTile(symbol: "backpack.fill", tint: .orange, size: .lg)
             VStack(spacing: 6) {
                 Text("Welcome back").dpTitle1()
                 Text("Log in to keep your loadouts in sync.")
