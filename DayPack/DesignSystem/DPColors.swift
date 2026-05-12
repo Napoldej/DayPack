@@ -10,33 +10,39 @@ extension Color {
 }
 
 extension Color {
-    static let dpOrange      = Color(hex: 0xE76F3C)
-    static let dpOrangeDeep  = Color(hex: 0xA84725)
-    static let dpOrangeSoft  = Color(hex: 0xF7E5DA)
-    static let dpOrangeMuted = Color(hex: 0xFBF3EF)
+    // MARK: - DayPack v2 brand: lime accent, navy ink, cream paper
+    static let dpOrange      = Color(hex: 0xEDF312)
+    static let dpOrangeDeep  = Color(hex: 0xC9D100)
+    static let dpOrangeSoft  = Color(hex: 0xF6FAC8)
+    static let dpOrangeMuted = Color(hex: 0xFAFBD9)
 
-    static let dpGreen       = Color(hex: 0x4E8A68)
-    static let dpGreenSoft   = Color(hex: 0xE8F1EA)
-    static let dpRed         = Color(hex: 0xC94E45)
-    static let dpRedSoft     = Color(hex: 0xF8E7E4)
-    static let dpAmber       = Color(hex: 0xA8782B)
-    static let dpAmberSoft   = Color(hex: 0xF5EBD8)
-    static let dpBlue        = Color(hex: 0x4B6F9F)
-    static let dpBlueSoft    = Color(hex: 0xE8EDF4)
-    static let dpTeal        = Color(hex: 0x4E8582)
-    static let dpTealSoft    = Color(hex: 0xE5F0EF)
+    // MARK: - Semantic
+    static let dpGreen       = Color(hex: 0x2F7D4C)
+    static let dpGreenSoft   = Color(hex: 0xE3EFE8)
+    static let dpRed         = Color(hex: 0xD24C3E)
+    static let dpRedSoft     = Color(hex: 0xF7E1DE)
+    static let dpAmber       = Color(hex: 0x8A7800)
+    static let dpAmberSoft   = Color(hex: 0xF5F7BF)
+    static let dpBlue        = Color(hex: 0x2D4EA8)
+    static let dpBlueSoft    = Color(hex: 0xE1E6F6)
+    static let dpTeal        = Color(hex: 0x3D3D2E)
+    static let dpTealSoft    = Color(hex: 0xE8E8DE)
 
-    static let dpBg          = Color(hex: 0xF8F8F8)
-    static let dpBgGrouped   = Color(hex: 0xEFEDEA)
+    // MARK: - Surfaces
+    static let dpBg          = Color(hex: 0xF5F5F0)
+    static let dpBgGrouped   = Color(hex: 0xECEBE3)
     static let dpSurface     = Color(hex: 0xFFFFFF)
-    static let dpSurfaceAlt  = Color(hex: 0xF4F3F1)
+    static let dpSurfaceAlt  = Color(hex: 0xECEBE3)
 
-    static let dpInk         = Color(hex: 0x34322D)
-    static let dpInk2        = Color(hex: 0x55514A)
-    static let dpInk3        = Color(hex: 0x7A756C)
-    static let dpInk4        = Color(hex: 0xA6A199)
-    static let dpHairline    = Color(hex: 0xD8D4CE)
-    static let dpDivider     = Color(hex: 0xE6E2DC)
+    // MARK: - Ink
+    static let dpInk         = Color(hex: 0x1A1A2E)
+    static let dpInk2        = Color(hex: 0x3D3D2E)
+    static let dpInk3        = Color(hex: 0x7C7C70)
+    static let dpInk4        = Color(hex: 0xB6B6AB)
+
+    // MARK: - Dividers
+    static let dpHairline    = Color(hex: 0xE5E4DA)
+    static let dpDivider     = Color(hex: 0xD9D8CD)
 }
 
 #Preview("Color tokens") {
@@ -46,18 +52,19 @@ extension Color {
                 ("dpOrange",      .dpOrange),
                 ("dpOrangeDeep",  .dpOrangeDeep),
                 ("dpOrangeSoft",  .dpOrangeSoft),
-                ("dpOrangeMuted", .dpOrangeMuted),
             ]),
             ("Semantic", [
                 ("dpGreen",     .dpGreen),
                 ("dpGreenSoft", .dpGreenSoft),
-                ("dpAmber",     .dpAmber),
                 ("dpRed",       .dpRed),
+                ("dpRedSoft",   .dpRedSoft),
+                ("dpAmber",     .dpAmber),
             ]),
             ("Surface", [
-                ("dpBg",        .dpBg),
-                ("dpBgGrouped", .dpBgGrouped),
-                ("dpSurface",   .dpSurface),
+                ("dpBg",         .dpBg),
+                ("dpBgGrouped",  .dpBgGrouped),
+                ("dpSurface",    .dpSurface),
+                ("dpSurfaceAlt", .dpSurfaceAlt),
             ]),
             ("Ink", [
                 ("dpInk",  .dpInk),
@@ -74,12 +81,12 @@ extension Color {
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 110), spacing: 12)], spacing: 12) {
                         ForEach(group.1, id: \.0) { pair in
                             VStack(alignment: .leading, spacing: 6) {
-                                RoundedRectangle(cornerRadius: 12)
+                                RoundedRectangle(cornerRadius: 10)
                                     .fill(pair.1)
-                                    .frame(height: 64)
+                                    .frame(height: 56)
                                     .overlay(
-                                        RoundedRectangle(cornerRadius: 12)
-                                            .stroke(Color.dpHairline, lineWidth: 0.5)
+                                        RoundedRectangle(cornerRadius: 10)
+                                            .stroke(Color.dpDivider, lineWidth: 0.5)
                                     )
                                 Text(pair.0).font(.caption).foregroundStyle(.secondary)
                             }
