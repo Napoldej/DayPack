@@ -57,6 +57,9 @@ final class AuthSession {
             )
             tokenStore.save(response.token)
             cacheUser(response.user)
+            UserDefaults.standard.set(false, forKey: "hasCompletedSetup")
+            UserDefaults.standard.set(false, forKey: "hasCompletedSetup.\(response.user.id.uuidString)")
+            UserDefaults.standard.set(UserDefaults.standard.integer(forKey: "setupRevision") + 1, forKey: "setupRevision")
             currentUser = response.user
             InventoryStore.shared.reload()
         }

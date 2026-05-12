@@ -18,6 +18,7 @@ final class HomeLocationService: NSObject, CLLocationManagerDelegate {
     private let latitudeKey = "home.latitude"
     private let longitudeKey = "home.longitude"
     private let radius: CLLocationDistance = 150
+    private var shouldSetHomeOnNextLocation = false
 
     private(set) var authorizationStatus: CLAuthorizationStatus
     private(set) var currentLocation: CLLocation?
@@ -40,7 +41,7 @@ final class HomeLocationService: NSObject, CLLocationManagerDelegate {
 
     func refreshLocationState() {
         guard authorizationStatus == .authorizedAlways || authorizationStatus == .authorizedWhenInUse else {
-            presence = .unavailable
+            setPresence(.unavailable, shouldNotifyDeparture: false)
             return
         }
 
@@ -53,15 +54,27 @@ final class HomeLocationService: NSObject, CLLocationManagerDelegate {
     }
 
     func requestPermissions() {
-        manager.requestWhenInUseAuthorization()
-        manager.requestAlwaysAuthorization()
+        switch authorizationStatus {
+        case .notDetermined:
+            manager.requestWhenInUseAuthorization()
+        case .authorizedWhenInUse:
+            manager.requestAlwaysAuthorization()
+        case .authorizedAlways:
+            startMonitoringIfPossible()
+        case .denied, .restricted:
+            lastError = "Location permission is denied. Enable it in Settings."
+        @unknown default:
+            break
+        }
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { _, _ in }
     }
 
     func useCurrentLocationAsHome() {
+        requestPermissions()
         if let location = currentLocation {
             setHome(location.coordinate)
         } else {
+            shouldSetHomeOnNextLocation = true
             manager.requestLocation()
         }
     }
@@ -70,10 +83,11 @@ final class HomeLocationService: NSObject, CLLocationManagerDelegate {
         homeCoordinate = coordinate
         UserDefaults.standard.set(coordinate.latitude, forKey: latitudeKey)
         UserDefaults.standard.set(coordinate.longitude, forKey: longitudeKey)
+        requestPermissions()
         if let currentLocation {
             updatePresence(using: currentLocation)
         } else {
-            presence = .unknown
+            setPresence(.unknown, shouldNotifyDeparture: false)
         }
         startMonitoringIfPossible()
     }
@@ -85,22 +99,35 @@ final class HomeLocationService: NSObject, CLLocationManagerDelegate {
         for region in manager.monitoredRegions where region.identifier == "home" {
             manager.stopMonitoring(for: region)
         }
-        presence = .unknown
+        setPresence(.unknown, shouldNotifyDeparture: false)
     }
 
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         authorizationStatus = manager.authorizationStatus
-        if authorizationStatus == .authorizedAlways || authorizationStatus == .authorizedWhenInUse {
+
+        switch authorizationStatus {
+        case .authorizedAlways:
             manager.requestLocation()
             startMonitoringIfPossible()
-        } else {
-            presence = .unavailable
+        case .authorizedWhenInUse:
+            manager.requestLocation()
+            manager.requestAlwaysAuthorization()
+        case .denied, .restricted:
+            setPresence(.unavailable, shouldNotifyDeparture: false)
+            lastError = "Location permission is denied. Enable it in Settings."
+        case .notDetermined:
+            setPresence(.unknown, shouldNotifyDeparture: false)
+        @unknown default:
+            setPresence(.unknown, shouldNotifyDeparture: false)
         }
     }
 
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         currentLocation = locations.last
-        if homeCoordinate == nil, let coordinate = currentLocation?.coordinate {
+        if shouldSetHomeOnNextLocation, let coordinate = currentLocation?.coordinate {
+            shouldSetHomeOnNextLocation = false
+            setHome(coordinate)
+        } else if homeCoordinate == nil, let coordinate = currentLocation?.coordinate {
             setHome(coordinate)
         } else if let currentLocation {
             updatePresence(using: currentLocation)
@@ -113,24 +140,24 @@ final class HomeLocationService: NSObject, CLLocationManagerDelegate {
 
     func locationManager(_ manager: CLLocationManager, didExitRegion region: CLRegion) {
         guard region.identifier == "home" else { return }
-        presence = .away
+        setPresence(.away, shouldNotifyDeparture: false)
         Task { await notifyDeparture() }
     }
 
     func locationManager(_ manager: CLLocationManager, didEnterRegion region: CLRegion) {
         guard region.identifier == "home" else { return }
-        presence = .atHome
+        setPresence(.atHome, shouldNotifyDeparture: false)
     }
 
     func locationManager(_ manager: CLLocationManager, didDetermineState state: CLRegionState, for region: CLRegion) {
         guard region.identifier == "home" else { return }
         switch state {
         case .inside:
-            presence = .atHome
+            setPresence(.atHome, shouldNotifyDeparture: false)
         case .outside:
-            presence = .away
+            setPresence(.away)
         case .unknown:
-            presence = .unknown
+            setPresence(.unknown, shouldNotifyDeparture: false)
         }
     }
 
@@ -170,12 +197,21 @@ final class HomeLocationService: NSObject, CLLocationManagerDelegate {
 
     private func updatePresence(using location: CLLocation) {
         guard let homeCoordinate else {
-            presence = .unknown
+            setPresence(.unknown, shouldNotifyDeparture: false)
             return
         }
 
         let home = CLLocation(latitude: homeCoordinate.latitude, longitude: homeCoordinate.longitude)
-        presence = location.distance(from: home) <= radius ? .atHome : .away
+        setPresence(location.distance(from: home) <= radius ? .atHome : .away)
+    }
+
+    private func setPresence(_ newPresence: Presence, shouldNotifyDeparture: Bool = true) {
+        let oldPresence = presence
+        presence = newPresence
+
+        if shouldNotifyDeparture, oldPresence == .atHome, newPresence == .away {
+            Task { await notifyDeparture() }
+        }
     }
 
     private func notifyDeparture() async {
