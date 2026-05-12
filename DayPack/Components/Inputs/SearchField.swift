@@ -8,7 +8,7 @@ struct SearchField: View {
         HStack(spacing: 10) {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 16, weight: .medium))
-                .foregroundStyle(Color.dpInk3)
+                .foregroundStyle(Color.dpInk4)
             TextField(placeholder, text: $text)
                 .font(.system(size: 15))
                 .foregroundStyle(Color.dpInk)
@@ -23,16 +23,15 @@ struct SearchField: View {
             }
         }
         .padding(.horizontal, 14)
-        .padding(.vertical, 12)
+        .padding(.vertical, 10)
         .background(
-            RoundedRectangle(cornerRadius: DPRadius.md, style: .continuous)
+            Capsule()
                 .fill(Color.dpSurface)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: DPRadius.md, style: .continuous)
+            Capsule()
                 .stroke(Color.dpDivider, lineWidth: 1)
         )
-        .dpShadow(.soft)
     }
 }
 

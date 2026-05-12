@@ -25,8 +25,12 @@ struct ToggleRow: View {
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
         .background(
-            RoundedRectangle(cornerRadius: DPRadius.md, style: .continuous)
+            RoundedRectangle(cornerRadius: DPRadius.lg, style: .continuous)
                 .fill(Color.dpSurface)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: DPRadius.lg, style: .continuous)
+                .stroke(Color.dpDivider, lineWidth: 1)
         )
     }
 }

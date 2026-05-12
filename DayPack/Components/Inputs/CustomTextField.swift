@@ -46,7 +46,7 @@ struct CustomTextField: View {
             if let hint {
                 Text(hint)
                     .font(.system(size: 11))
-                    .foregroundStyle(Color.dpInk4)
+                    .foregroundStyle(Color.dpInk3)
                     .padding(.top, 2)
             }
         }
@@ -54,12 +54,12 @@ struct CustomTextField: View {
         .padding(.vertical, 10)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            RoundedRectangle(cornerRadius: DPRadius.md, style: .continuous)
+            RoundedRectangle(cornerRadius: DPRadius.lg, style: .continuous)
                 .fill(Color.dpSurface)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: DPRadius.md, style: .continuous)
-                .stroke(isFocused ? Color.dpOrange : Color.dpDivider, lineWidth: 1)
+            RoundedRectangle(cornerRadius: DPRadius.lg, style: .continuous)
+                .stroke(isFocused ? Color.dpInk : Color.dpDivider, lineWidth: 1.4)
         )
         .dpShadow(.soft)
     }

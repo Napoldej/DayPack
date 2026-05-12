@@ -5,11 +5,6 @@ struct ChecklistItemRow: View {
     var isPacked: Bool
     var onToggle: () -> Void
 
-    private var rowBackground: Color {
-        if item.priority == .high && !isPacked { return Color.dpOrangeMuted }
-        return Color.dpSurface
-    }
-
     var body: some View {
         Button(action: onToggle) {
             HStack(spacing: DPSpacing.md) {
@@ -23,17 +18,12 @@ struct ChecklistItemRow: View {
                 }
                 Spacer(minLength: 4)
                 if let tag = item.tag {
-                    Pill(text: tag,
-                         style: tagStyle(tag, priority: item.priority))
+                    Pill(text: tag, style: tagStyle(tag, priority: item.priority))
                 }
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 12)
-            .frame(minHeight: 56)
-            .background(
-                RoundedRectangle(cornerRadius: DPRadius.md, style: .continuous)
-                    .fill(rowBackground)
-            )
+            .padding(.horizontal, DPSpacing.base)
+            .padding(.vertical, DPSpacing.md)
+            .frame(minHeight: 52)
         }
         .buttonStyle(PressableButtonStyle())
         .accessibilityLabel(Text(item.name))
@@ -57,21 +47,20 @@ private struct Checkbox: View {
     var body: some View {
         ZStack {
             Circle()
-                .stroke(Color.dpInk4, lineWidth: 1.6)
-                .frame(width: 26, height: 26)
+                .stroke(Color.dpInk4, lineWidth: 1.5)
+                .frame(width: 24, height: 24)
                 .opacity(checked ? 0 : 1)
             Circle()
-                .fill(Color.dpGreen)
-                .frame(width: 26, height: 26)
+                .fill(Color.dpInk)
+                .frame(width: 24, height: 24)
                 .opacity(checked ? 1 : 0)
-                .shadow(color: Color.dpGreen.opacity(0.33), radius: 3, x: 0, y: 2)
             if checked {
                 Image(systemName: "checkmark")
                     .font(.system(size: 12, weight: .bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Color.dpBg)
             }
         }
-        .animation(.spring(duration: 0.22), value: checked)
+        .animation(.easeOut(duration: 0.15), value: checked)
     }
 }
 
@@ -80,11 +69,20 @@ private struct Checkbox: View {
     let waterBottle = Item(name: "Water Bottle", symbol: "drop.fill",        tint: .orange)
     let proteinShake = Item(name: "Protein Shake", symbol: "drop.halffull",  tint: .red, priority: .high, tag: "Don't forget")
 
-    return VStack(spacing: 8) {
+    return VStack(spacing: 0) {
         ChecklistItemRow(item: notebook,    isPacked: true,  onToggle: {})
+        Divider().padding(.leading, 56)
         ChecklistItemRow(item: waterBottle, isPacked: false, onToggle: {})
+        Divider().padding(.leading, 56)
         ChecklistItemRow(item: proteinShake, isPacked: false, onToggle: {})
     }
+    .background(Color.dpSurface)
+    .clipShape(RoundedRectangle(cornerRadius: DPRadius.lg, style: .continuous))
+    .overlay(
+        RoundedRectangle(cornerRadius: DPRadius.lg, style: .continuous)
+            .stroke(Color.dpDivider, lineWidth: 1)
+    )
+    .dpShadow(.soft)
     .padding()
     .frame(maxWidth: .infinity, maxHeight: .infinity)
     .background(Color.dpBg)

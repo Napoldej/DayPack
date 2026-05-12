@@ -7,24 +7,24 @@ struct IconTile: View {
         var dimension: CGFloat {
             switch self {
             case .sm: return 32
-            case .md: return 44
+            case .md: return 40
             case .lg: return 48
             }
         }
 
         var radius: CGFloat {
             switch self {
-            case .sm: return 9
-            case .md: return 12
-            case .lg: return 14
+            case .sm: return 8
+            case .md: return 10
+            case .lg: return 12
             }
         }
 
         var iconSize: CGFloat {
             switch self {
-            case .sm: return 16
-            case .md: return 20
-            case .lg: return 24
+            case .sm: return 15
+            case .md: return 18
+            case .lg: return 22
             }
         }
     }
@@ -39,7 +39,7 @@ struct IconTile: View {
             .frame(width: size.dimension, height: size.dimension)
             .overlay(
                 RoundedRectangle(cornerRadius: size.radius, style: .continuous)
-                    .stroke(Color.white.opacity(0.75), lineWidth: 1)
+                    .stroke(Color.dpDivider, lineWidth: 1)
             )
             .overlay(
                 Image(systemName: symbol)

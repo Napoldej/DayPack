@@ -8,19 +8,21 @@ struct EmptyStateView: View {
     var ctaAction: (() -> Void)? = nil
 
     var body: some View {
-        VStack(spacing: DPSpacing.base) {
-            ZStack {
-                Circle().fill(Color.dpOrangeSoft).frame(width: 96, height: 96)
-                Image(systemName: symbol)
-                    .font(.system(size: 38, weight: .regular))
-                    .foregroundStyle(Color.dpOrange)
+        VStack(spacing: DPSpacing.lg) {
+            Image(systemName: symbol)
+                .font(.system(size: 44, weight: .light))
+                .foregroundStyle(Color.dpInk4)
+
+            VStack(spacing: DPSpacing.sm) {
+                Text(title)
+                    .dpTitle2()
+                    .foregroundStyle(Color.dpInk)
+                Text(message)
+                    .dpBody()
+                    .foregroundStyle(Color.dpInk3)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, DPSpacing.lg)
             }
-            Text(title).dpTitle2()
-            Text(message)
-                .dpSubhead()
-                .foregroundStyle(Color.dpInk3)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, DPSpacing.lg)
 
             if let ctaTitle, let ctaAction {
                 PrimaryButton(title: ctaTitle, action: ctaAction)

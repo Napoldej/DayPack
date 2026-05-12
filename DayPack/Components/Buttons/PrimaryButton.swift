@@ -6,15 +6,15 @@ struct PrimaryButton: View {
         var height: CGFloat {
             switch self {
             case .sm: return 36
-            case .md: return 50
-            case .lg: return 54
+            case .md: return 48
+            case .lg: return 52
             }
         }
         var radius: CGFloat {
-            self == .sm ? DPRadius.md : DPRadius.lg
+            DPRadius.full
         }
         var fontSize: CGFloat {
-            self == .sm ? 14 : 17
+            self == .sm ? 14 : 16
         }
     }
 
@@ -47,14 +47,14 @@ struct PrimaryButton: View {
             .frame(maxWidth: isFullWidth ? .infinity : nil)
             .frame(height: size.height)
             .padding(.horizontal, isFullWidth ? 0 : 22)
-            .foregroundStyle(.white)
+            .foregroundStyle(isDisabled ? Color.dpInk3 : Color.dpBg)
             .background(
                 RoundedRectangle(cornerRadius: size.radius, style: .continuous)
-                    .fill(isDisabled ? Color.dpInk4 : Color.dpOrange)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: size.radius, style: .continuous)
-                            .stroke(Color.white.opacity(isDisabled ? 0 : 0.18), lineWidth: 1)
-                    )
+                    .fill(isDisabled ? Color.dpInk4.opacity(0.35) : Color.dpInk)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: size.radius, style: .continuous)
+                    .stroke(isDisabled ? Color.dpDivider : Color.dpInk, lineWidth: 1)
             )
             .dpShadow(isDisabled ? .soft : .brand)
         }

@@ -6,7 +6,7 @@ struct SecondaryButton: View {
 
         var background: Color {
             switch self {
-            case .soft:   return Color.dpSurface
+            case .soft:   return Color.dpOrange
             case .ghost:  return .clear
             case .danger: return Color.dpRedSoft
             }
@@ -14,7 +14,7 @@ struct SecondaryButton: View {
 
         var foreground: Color {
             switch self {
-            case .soft:   return Color.dpOrangeDeep
+            case .soft:   return Color.dpInk
             case .ghost:  return Color.dpInk2
             case .danger: return Color.dpRed
             }

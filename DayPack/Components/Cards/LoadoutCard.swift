@@ -1,9 +1,10 @@
 import SwiftUI
 
 struct LoadoutCard: View {
-    enum Style {
-        case standard, compact
-    }
+    let loadout: Loadout
+    var itemCount: Int
+    var isActive: Bool = false
+    var onTap: (() -> Void)? = nil
 
     private struct MetadataChip: Hashable {
         let symbol: String
@@ -13,79 +14,59 @@ struct LoadoutCard: View {
         static func == (lhs: MetadataChip, rhs: MetadataChip) -> Bool {
             lhs.symbol == rhs.symbol && lhs.text == rhs.text
         }
-
         func hash(into hasher: inout Hasher) {
             hasher.combine(symbol)
             hasher.combine(text)
         }
     }
 
-    let loadout: Loadout
-    var itemCount: Int
-    var isActive: Bool = false
-    var style: Style = .standard
-    var onTap: (() -> Void)? = nil
-
     var body: some View {
         Button(action: { onTap?() }) {
-            content
-                .background(
-                    RoundedRectangle(cornerRadius: DPRadius.xl, style: .continuous)
-                        .fill(Color.dpSurface)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: DPRadius.xl, style: .continuous)
-                        .stroke(isActive ? Color.dpOrange.opacity(0.7) : Color.dpDivider, lineWidth: 1)
-                )
-                .overlay(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: DPRadius.xl, style: .continuous)
-                        .fill(isActive ? Color.dpOrange : Color.dpDivider)
-                        .frame(width: 4)
-                }
-                .dpShadow(.soft)
-        }
-        .buttonStyle(PressableButtonStyle())
-    }
-
-    @ViewBuilder
-    private var content: some View {
-        switch style {
-        case .standard:
             HStack(spacing: DPSpacing.md) {
                 IconTile(symbol: loadout.symbol, tint: loadout.tint, size: .lg)
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(loadout.name)
-                        .font(.system(size: 18, weight: .bold, design: .default))
-                        .foregroundStyle(Color.dpInk)
-                    Text("\(itemCount) items · \(loadout.schedule)")
-                        .font(.system(size: 12.5))
-                        .foregroundStyle(Color.dpInk3)
-                    metadataChips
-                }
-                Spacer(minLength: 0)
-            }
-            .padding(DPSpacing.base)
-            .padding(.leading, 4)
 
-        case .compact:
-            HStack(spacing: DPSpacing.md) {
-                IconTile(symbol: loadout.symbol, tint: loadout.tint, size: .md)
                 VStack(alignment: .leading, spacing: 5) {
                     Text(loadout.name)
-                        .font(.system(size: 16, weight: .bold, design: .default))
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(isActive ? Color.dpBg : Color.dpInk)
+
                     Text("\(itemCount) items · \(loadout.schedule)")
-                        .font(.system(size: 12))
-                        .foregroundStyle(Color.dpInk3)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(isActive ? Color.dpInk4 : Color.dpInk3)
+
                     metadataChips
                 }
                 Spacer(minLength: 0)
+
                 Image(systemName: "chevron.right")
                     .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(Color.dpInk4)
+                    .foregroundStyle(isActive ? Color.dpOrange : Color.dpInk4)
             }
-            .padding(DPSpacing.md)
-            .padding(.leading, 4)
+            .padding(DPSpacing.base)
+            .background(
+                RoundedRectangle(cornerRadius: DPRadius.lg, style: .continuous)
+                    .fill(isActive ? Color.dpInk : Color.dpSurface)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: DPRadius.lg, style: .continuous)
+                    .stroke(isActive ? Color.dpInk : Color.dpDivider, lineWidth: 1)
+            )
+            .overlay(alignment: .leading) {
+                if isActive {
+                    UnevenRoundedRectangle(
+                        topLeadingRadius: DPRadius.lg,
+                        bottomLeadingRadius: DPRadius.lg,
+                        bottomTrailingRadius: 0,
+                        topTrailingRadius: 0,
+                        style: .continuous
+                    )
+                    .fill(Color.dpOrange)
+                    .frame(width: 4)
+                }
+            }
+            .dpShadow(.soft)
         }
+        .buttonStyle(PressableButtonStyle())
     }
 
     @ViewBuilder
@@ -103,11 +84,7 @@ struct LoadoutCard: View {
                     .foregroundStyle(chip.color)
                     .padding(.horizontal, 7)
                     .padding(.vertical, 4)
-                    .background(
-                        Capsule()
-                            .fill(chip.color.opacity(0.10))
-                            .overlay(Capsule().stroke(chip.color.opacity(0.16), lineWidth: 1))
-                    )
+                    .background(Capsule().fill(chip.color.opacity(0.10)))
                 }
             }
         }
@@ -116,13 +93,13 @@ struct LoadoutCard: View {
     private var metadata: [MetadataChip] {
         var chips: [MetadataChip] = []
         if isActive {
-            chips.append(MetadataChip(symbol: "checkmark.seal.fill", text: "Today", color: Color.dpOrangeDeep))
+            chips.append(MetadataChip(symbol: "checkmark.seal.fill", text: "Active", color: Color.dpOrange))
         }
         if loadout.isSuggestedForTomorrow {
-            chips.append(MetadataChip(symbol: "calendar", text: "Tomorrow", color: Color.dpOrangeDeep))
+            chips.append(MetadataChip(symbol: "calendar", text: "Tomorrow", color: Color.dpAmber))
         }
         if loadout.isTemporary {
-            chips.append(MetadataChip(symbol: "sparkles", text: "Temp", color: Color.dpOrangeDeep))
+            chips.append(MetadataChip(symbol: "sparkles", text: "Temp", color: Color.dpAmber))
         }
         if let alertTime = loadout.alertTime {
             chips.append(MetadataChip(symbol: "bell.fill", text: alertTime, color: Color.dpInk3))
@@ -142,7 +119,7 @@ struct LoadoutCard: View {
     return VStack(spacing: 12) {
         LoadoutCard(loadout: school, itemCount: 8, isActive: true)
         LoadoutCard(loadout: gym,    itemCount: 6)
-        LoadoutCard(loadout: travel, itemCount: 14, style: .compact)
+        LoadoutCard(loadout: travel, itemCount: 14)
     }
     .padding()
     .frame(maxWidth: .infinity, maxHeight: .infinity)

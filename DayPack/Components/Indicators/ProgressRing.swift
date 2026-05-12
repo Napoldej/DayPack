@@ -4,7 +4,7 @@ struct ProgressRing: View {
     var value: Double
     var size: CGFloat = 64
     var lineWidth: CGFloat = 6
-    var trackColor: Color = Color.dpBgGrouped
+    var trackColor: Color = Color.dpDivider
     var fillColor: Color = .dpOrange
     var label: String? = nil
 
@@ -12,8 +12,7 @@ struct ProgressRing: View {
 
     var body: some View {
         ZStack {
-            Circle()
-                .stroke(trackColor, lineWidth: lineWidth)
+            Circle().stroke(trackColor, lineWidth: lineWidth)
             Circle()
                 .trim(from: 0, to: CGFloat(clamped))
                 .stroke(fillColor, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
@@ -22,12 +21,12 @@ struct ProgressRing: View {
 
             if let label {
                 Text(label)
-                    .font(.system(size: size * 0.23, weight: .heavy, design: .rounded))
-                    .foregroundStyle(fillColor)
+                    .font(.system(size: size * 0.22, weight: .bold))
+                    .foregroundStyle(Color.dpInk)
             } else {
                 Text("\(Int(clamped * 100))%")
-                    .font(.system(size: size * 0.23, weight: .heavy, design: .rounded))
-                    .foregroundStyle(fillColor)
+                    .font(.system(size: size * 0.22, weight: .bold))
+                    .foregroundStyle(Color.dpInk)
             }
         }
         .frame(width: size, height: size)
@@ -40,7 +39,7 @@ struct ProgressRing: View {
             ProgressRing(value: 0.0)
             ProgressRing(value: 0.33)
             ProgressRing(value: 0.63)
-            ProgressRing(value: 1.0)
+            ProgressRing(value: 1.0, fillColor: .dpGreen)
         }
         ProgressRing(value: 0.66, size: 120, lineWidth: 10, label: "4 / 6")
     }

@@ -6,8 +6,8 @@ struct Pill: View {
 
         var background: Color {
             switch self {
-            case .neutral: return Color.dpBgGrouped
-            case .brand:   return Color.dpOrangeSoft
+            case .neutral: return Color.dpSurfaceAlt
+            case .brand:   return Color.dpOrange
             case .warn:    return Color.dpRedSoft
             case .success: return Color.dpGreenSoft
             case .info:    return Color.dpAmberSoft
@@ -16,8 +16,8 @@ struct Pill: View {
 
         var foreground: Color {
             switch self {
-            case .neutral: return Color.dpInk3
-            case .brand:   return Color.dpOrangeDeep
+            case .neutral: return Color.dpInk2
+            case .brand:   return Color.dpInk
             case .warn:    return Color.dpRed
             case .success: return Color.dpGreen
             case .info:    return Color.dpAmber
@@ -35,15 +35,13 @@ struct Pill: View {
                 Image(systemName: icon).font(.system(size: 10, weight: .bold))
             }
             Text(text)
-                .font(.system(size: 11.5, weight: .semibold))
-                .tracking(0.1)
+                .font(.system(size: 11, weight: .semibold))
+                .textCase(.uppercase)
         }
-        .padding(.horizontal, 9)
+        .padding(.horizontal, 8)
         .frame(height: 22)
         .foregroundStyle(style.foreground)
-        .background(
-            Capsule().fill(style.background)
-        )
+        .background(Capsule().fill(style.background))
     }
 }
 

@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct DPCard<Content: View>: View {
-    var padding: CGFloat = DPSpacing.lg
+    var padding: CGFloat = DPSpacing.base
     var radius: CGFloat = DPRadius.xl
     var shadow: DPShadowStyle = .soft
     var background: Color = .dpSurface
@@ -26,13 +26,13 @@ struct DPCard<Content: View>: View {
     VStack(spacing: 16) {
         DPCard {
             VStack(alignment: .leading, spacing: 8) {
-                Text("Today's loadout").dpEyebrow()
+                Text("Active loadout").dpEyebrow()
                 Text("School Day").dpTitle2()
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         DPCard(shadow: .card) {
-            Text("Card shadow").dpHeadline()
+            Text("Card shadow variant").dpHeadline()
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
     }

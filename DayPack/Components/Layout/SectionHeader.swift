@@ -13,12 +13,13 @@ struct SectionHeader: View {
             }
             HStack(alignment: .firstTextBaseline) {
                 Text(title).dpTitle2()
+                    .foregroundStyle(Color.dpInk)
                 Spacer(minLength: 8)
                 if let trailingTitle, let trailingAction {
                     Button(action: trailingAction) {
                         Text(trailingTitle)
                             .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(Color.dpOrange)
+                            .foregroundStyle(Color.dpInk2)
                     }
                     .buttonStyle(.plain)
                 }

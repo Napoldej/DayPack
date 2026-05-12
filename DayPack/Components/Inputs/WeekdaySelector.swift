@@ -27,7 +27,7 @@ struct WeekdaySelector: View {
                                 .font(.system(size: 12, weight: .bold))
                                 .minimumScaleFactor(0.75)
                                 .lineLimit(1)
-                                .foregroundStyle(selectedDays.contains(day.id) ? Color.white : Color.dpInk2)
+                                .foregroundStyle(selectedDays.contains(day.id) ? Color.dpInk : Color.dpInk2)
                                 .frame(maxWidth: .infinity)
                                 .frame(height: 36)
                                 .background(
