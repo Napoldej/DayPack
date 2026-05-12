@@ -74,6 +74,8 @@ struct TripPlannerView: View {
     @State private var errorMessage: String?
     @State private var inventoryTargetBagID: UUID?
 
+
+
     private var packedCount: Int {
         bags.flatMap(\.items).filter(\.isPacked).count
     }
@@ -91,35 +93,63 @@ struct TripPlannerView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: DPSpacing.lg) {
-                    SectionHeader(title: "Trip", eyebrow: "Pack once before leaving")
-                    tripSummary
+                    // Trip hero
+                    VStack(alignment: .leading, spacing: DPSpacing.sm) {
+                        Text("Trip")
+                            .font(.system(size: 11, weight: .bold))
+                            .tracking(0.4)
+                            .textCase(.uppercase)
+                            .foregroundStyle(Color.dpOrange)
+
+                        // Large editable trip name
+                        TextField("Trip name", text: $tripName)
+                            .font(.system(size: 24, weight: .bold))
+                            .foregroundStyle(Color.dpInk)
+
+                        ProgressBar(
+                            value: progress,
+                            size: .lg,
+                            label: "\(packedCount) of \(totalCount) packed",
+                            trailingLabel: "\(Int(progress * 100))%"
+                        )
+                    }
+                    .padding(.horizontal, DPSpacing.lg)
 
                     if !availableLoadouts.isEmpty {
                         SectionHeader(title: "Add Packs", eyebrow: "From loadouts")
+                            .padding(.horizontal, DPSpacing.lg)
                         loadoutImportSection
+                            .padding(.horizontal, DPSpacing.lg)
                     }
 
                     SectionHeader(title: "Friend Code", eyebrow: "Import pack")
+                        .padding(.horizontal, DPSpacing.lg)
                     friendCodeSection
+                        .padding(.horizontal, DPSpacing.lg)
 
                     if let friendPreview {
                         friendPreviewCard(friendPreview)
+                            .padding(.horizontal, DPSpacing.lg)
                     }
 
                     if let statusMessage {
                         messageRow(statusMessage, color: Color.dpGreen)
+                            .padding(.horizontal, DPSpacing.lg)
                     }
 
                     if let errorMessage {
                         messageRow(errorMessage, color: Color.dpRed)
+                            .padding(.horizontal, DPSpacing.lg)
                     }
 
                     SectionHeader(title: "Trip Sections", eyebrow: "\(bags.count) bags")
+                        .padding(.horizontal, DPSpacing.lg)
                     VStack(spacing: DPSpacing.md) {
                         ForEach(bags) { bag in
                             bagSection(bag)
                         }
                     }
+                    .padding(.horizontal, DPSpacing.lg)
 
                     DPCard {
                         VStack(spacing: DPSpacing.md) {
@@ -129,8 +159,8 @@ struct TripPlannerView: View {
                             }
                         }
                     }
+                    .padding(.horizontal, DPSpacing.lg)
                 }
-                .padding(.horizontal, DPSpacing.lg)
                 .padding(.bottom, DPSpacing.xxl)
             }
             .background(Color.dpBg)
@@ -161,25 +191,11 @@ struct TripPlannerView: View {
         )
     }
 
-    private var tripSummary: some View {
-        DPCard {
-            VStack(alignment: .leading, spacing: DPSpacing.md) {
-                CustomTextField(label: "Trip name", text: $tripName, placeholder: "Weekend Trip")
-                ProgressBar(
-                    value: progress,
-                    size: .lg,
-                    label: "\(packedCount) of \(totalCount) packed",
-                    trailingLabel: "\(Int(progress * 100))%"
-                )
-            }
-        }
-    }
-
     private var loadoutImportSection: some View {
         DPCard {
             VStack(alignment: .leading, spacing: DPSpacing.md) {
-                Text("Import a saved pack as a trip section, then adjust the items from Inventory.")
-                    .font(.system(size: 14, weight: .semibold))
+                Text("Import a saved pack as a trip section.")
+                    .dpBody()
                     .foregroundStyle(Color.dpInk3)
 
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -198,12 +214,8 @@ struct TripPlannerView: View {
                                 .padding(.horizontal, 10)
                                 .frame(height: 38)
                                 .background(
-                                    RoundedRectangle(cornerRadius: DPRadius.md, style: .continuous)
+                                    RoundedRectangle(cornerRadius: DPRadius.lg, style: .continuous)
                                         .fill(Color.dpSurfaceAlt)
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: DPRadius.md, style: .continuous)
-                                                .stroke(Color.dpDivider, lineWidth: 1)
-                                        )
                                 )
                             }
                             .buttonStyle(.plain)
@@ -218,7 +230,7 @@ struct TripPlannerView: View {
         DPCard {
             VStack(alignment: .leading, spacing: DPSpacing.md) {
                 Text("Import a friend's pack into this trip.")
-                    .font(.system(size: 14, weight: .semibold))
+                    .dpBody()
                     .foregroundStyle(Color.dpInk3)
 
                 CustomTextField(
@@ -287,14 +299,19 @@ struct TripPlannerView: View {
 
                 if bag.items.isEmpty {
                     Text("No items yet.")
-                        .font(.system(size: 14, weight: .semibold))
+                        .dpBody()
                         .foregroundStyle(Color.dpInk3)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.vertical, DPSpacing.sm)
                 } else {
-                    VStack(spacing: DPSpacing.sm) {
-                        ForEach(bag.items) { item in
+                    VStack(spacing: 0) {
+                        ForEach(Array(bag.items.enumerated()), id: \.element.id) { index, item in
                             tripItemRow(item, in: bag)
+                            if index < bag.items.count - 1 {
+                                Divider()
+                                    .background(Color.dpHairline)
+                                    .padding(.leading, 44)
+                            }
                         }
                     }
                 }
@@ -330,12 +347,7 @@ struct TripPlannerView: View {
                 .buttonStyle(.plain)
                 .accessibilityLabel("Remove \(item.name)")
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
-            .background(
-                RoundedRectangle(cornerRadius: DPRadius.md, style: .continuous)
-                    .fill(Color.dpSurfaceAlt)
-            )
+            .padding(.vertical, 8)
         }
         .buttonStyle(.plain)
     }
@@ -491,7 +503,7 @@ struct TripPlannerView: View {
             .padding(.horizontal, 14)
             .padding(.vertical, 12)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(RoundedRectangle(cornerRadius: DPRadius.md, style: .continuous).fill(Color.dpSurface))
+            .background(RoundedRectangle(cornerRadius: DPRadius.lg, style: .continuous).fill(Color.dpSurface))
     }
 
     private func symbolForItem(named name: String) -> String {

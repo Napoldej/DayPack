@@ -3,11 +3,12 @@ import SwiftUI
 struct ContentView: View {
     @Environment(\.authSession) private var session
     @AppStorage("hasCompletedSetup") private var hasCompletedSetup = false
+    @AppStorage("setupRevision") private var setupRevision = 0
 
     var body: some View {
         Group {
             if session.isLoggedIn {
-                if hasCompletedSetup {
+                if hasCompletedSetupForCurrentUser {
                     MainTabView()
                 } else {
                     OnboardingSetupView()
@@ -17,6 +18,12 @@ struct ContentView: View {
             }
         }
         .animation(.easeInOut(duration: 0.25), value: session.isLoggedIn)
+        .animation(.easeInOut(duration: 0.25), value: setupRevision)
+    }
+
+    private var hasCompletedSetupForCurrentUser: Bool {
+        guard let userID = session.currentUser?.id else { return hasCompletedSetup }
+        return UserDefaults.standard.bool(forKey: "hasCompletedSetup.\(userID.uuidString)")
     }
 }
 

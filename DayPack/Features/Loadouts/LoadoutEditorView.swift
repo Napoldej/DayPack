@@ -67,12 +67,14 @@ struct LoadoutEditorView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("Cancel") { dismiss() }
+                        .foregroundStyle(Color.dpInk2)
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Save") {
                         Task { await save() }
                     }
                     .fontWeight(.semibold)
+                    .foregroundStyle(Color.dpInk)
                 }
             }
         }
@@ -92,7 +94,7 @@ struct LoadoutEditorView: View {
                 ForEach(items.prefix(4)) { item in
                     HStack(spacing: DPSpacing.sm) {
                         Image(systemName: item.tag == "Optional" ? "circle" : "checkmark.circle.fill")
-                            .foregroundStyle(item.tag == "Optional" ? Color.dpInk4 : Color.dpOrange)
+                            .foregroundStyle(item.tag == "Optional" ? Color.dpInk4 : Color.dpInk)
                         Text(item.name)
                             .font(.system(size: 15, weight: .semibold))
                             .foregroundStyle(Color.dpInk)
@@ -210,7 +212,7 @@ private struct LoadoutItemManagerView: View {
                         } label: {
                             Image(systemName: "plus.circle.fill")
                                 .font(.system(size: 22, weight: .semibold))
-                                .foregroundStyle(Color.dpOrange)
+                                .foregroundStyle(Color.dpInk)
                         }
                         .buttonStyle(.plain)
                     }
@@ -219,7 +221,7 @@ private struct LoadoutItemManagerView: View {
                     } label: {
                         Label("From Inventory", systemImage: "tray.full.fill")
                     }
-                    .foregroundStyle(Color.dpOrange)
+                    .foregroundStyle(Color.dpInk)
                 }
 
                 Section {
@@ -230,7 +232,7 @@ private struct LoadoutItemManagerView: View {
                             } label: {
                                 Image(systemName: item.tag == "Optional" ? "circle" : "checkmark.circle.fill")
                                     .font(.system(size: 20, weight: .semibold))
-                                    .foregroundStyle(item.tag == "Optional" ? Color.dpInk4 : Color.dpOrange)
+                                    .foregroundStyle(item.tag == "Optional" ? Color.dpInk4 : Color.dpInk)
                             }
                             .buttonStyle(.plain)
 

@@ -6,6 +6,7 @@ struct LoadoutsView: View {
     @State private var showBuilder = false
     @State private var showGallery = false
     @State private var editingLoadout: Loadout?
+    @State private var selectedFilter = "All"
 
     var body: some View {
         NavigationStack {
@@ -20,7 +21,6 @@ struct LoadoutsView: View {
                                 ctaTitle: "Create a loadout",
                                 ctaAction: { showBuilder = true }
                             )
-                            .padding(.horizontal, DPSpacing.lg)
                         }
                     } else {
                         content(vm: vm)
@@ -28,34 +28,9 @@ struct LoadoutsView: View {
                 }
             }
             .background(Color.dpBg)
-            .navigationTitle("Loadouts")
+            .navigationTitle("")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(Color.dpBg, for: .navigationBar)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button {
-                        showGallery = true
-                    } label: {
-                        Image(systemName: "square.grid.2x2.fill")
-                            .font(.system(size: 15, weight: .bold))
-                            .foregroundStyle(Color.dpInk2)
-                            .frame(width: 30, height: 30)
-                            .background(RoundedRectangle(cornerRadius: DPRadius.md, style: .continuous).fill(Color.dpSurfaceAlt))
-                    }
-                    .accessibilityLabel("Shared packs gallery")
-                }
-
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        showBuilder = true
-                    } label: {
-                        Image(systemName: "plus")
-                            .font(.system(size: 15, weight: .bold))
-                            .foregroundStyle(.white)
-                            .frame(width: 30, height: 30)
-                            .background(RoundedRectangle(cornerRadius: DPRadius.md, style: .continuous).fill(Color.dpOrange))
-                    }
-                }
-            }
             .sheet(isPresented: $showBuilder, onDismiss: {
                 Task { await viewModel?.refresh() }
             }) {
@@ -63,14 +38,10 @@ struct LoadoutsView: View {
                     LoadoutBuilderView { name, symbol, tint, schedule, items, isTemporary, alertTime, returnAlertTime in
                         Task {
                             _ = await vm.createLoadout(
-                                name: name,
-                                symbol: symbol,
-                                tint: tint,
-                                schedule: schedule,
-                                items: items,
+                                name: name, symbol: symbol, tint: tint,
+                                schedule: schedule, items: items,
                                 isTemporary: isTemporary,
-                                alertTime: alertTime,
-                                returnAlertTime: returnAlertTime
+                                alertTime: alertTime, returnAlertTime: returnAlertTime
                             )
                         }
                     }
@@ -83,14 +54,9 @@ struct LoadoutsView: View {
                     SharedPacksGalleryView { template in
                         Task {
                             await vm.createLoadout(
-                                name: template.name,
-                                symbol: template.symbol,
-                                tint: template.tint,
-                                schedule: "Manual",
-                                items: template.items,
-                                isTemporary: false,
-                                alertTime: nil,
-                                returnAlertTime: nil
+                                name: template.name, symbol: template.symbol, tint: template.tint,
+                                schedule: "Manual", items: template.items,
+                                isTemporary: false, alertTime: nil, returnAlertTime: nil
                             )
                             showGallery = false
                         }
@@ -117,87 +83,134 @@ struct LoadoutsView: View {
 
     @ViewBuilder
     private func content(vm: LoadoutsViewModel) -> some View {
-        List {
-            SearchField(
-                text: Binding(
-                    get: { vm.searchText },
-                    set: { vm.searchText = $0 }
-                ),
-                placeholder: "Search loadouts & items"
-            )
-            .listRowSeparator(.hidden)
-            .listRowInsets(EdgeInsets(top: DPSpacing.md, leading: DPSpacing.lg, bottom: DPSpacing.sm, trailing: DPSpacing.lg))
-            .listRowBackground(Color.dpBg)
+        ScrollView {
+            VStack(alignment: .leading, spacing: DPSpacing.md) {
+                HStack(alignment: .bottom) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("\(vm.loadouts.count.formatted(.number.precision(.integerLength(2)))) loadouts")
+                            .dpEyebrow()
+                        Text("Your loadouts.")
+                            .font(.system(size: 38, weight: .bold, design: .serif))
+                            .italic()
+                            .foregroundStyle(Color.dpInk)
+                    }
+                    Spacer()
+                    Button { showBuilder = true } label: {
+                        Image(systemName: "plus")
+                            .font(.system(size: 20, weight: .black))
+                            .foregroundStyle(Color.dpInk)
+                            .frame(width: 44, height: 44)
+                            .background(Circle().fill(Color.dpOrange))
+                    }
+                    .buttonStyle(PressableButtonStyle())
+                    .accessibilityLabel("Create loadout")
+                }
+                .padding(.horizontal, DPSpacing.lg)
+                .padding(.top, DPSpacing.md)
 
-            ForEach(vm.filtered) { loadout in
-                loadoutRow(loadout, vm: vm)
-                    .listRowSeparator(.hidden)
-                    .listRowInsets(EdgeInsets(top: DPSpacing.sm, leading: DPSpacing.lg, bottom: DPSpacing.sm, trailing: DPSpacing.lg))
-                    .listRowBackground(Color.dpBg)
-                    .swipeActions(edge: .leading, allowsFullSwipe: true) {
-                        Button {
-                            Task { await vm.setToday(loadout) }
-                        } label: {
-                            Label("Today", systemImage: "checkmark.circle.fill")
-                        }
-                        .tint(Color.dpOrange)
-                    }
-                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                        Button(role: .destructive) {
-                            Task { await vm.deleteLoadout(loadout) }
-                        } label: {
-                            Label("Delete", systemImage: "trash")
+                SearchField(
+                    text: Binding(get: { vm.searchText }, set: { vm.searchText = $0 }),
+                    placeholder: "Search loadouts"
+                )
+                .padding(.horizontal, DPSpacing.lg)
+
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(["All", "Daily", "Sports", "Travel", "Conditional"], id: \.self) { filter in
+                            filterChip(filter, isSelected: selectedFilter == filter)
                         }
                     }
+                    .padding(.horizontal, DPSpacing.lg)
+                }
+
+                ForEach(filteredLoadouts(vm)) { loadout in
+                    ZStack(alignment: .topTrailing) {
+                        LoadoutCard(
+                            loadout: loadout,
+                            itemCount: vm.itemCount(for: loadout),
+                            isActive: loadout.id == vm.todaysID,
+                            onTap: { editingLoadout = loadout }
+                        )
+
+                        Menu {
+                            Button { editingLoadout = loadout } label: {
+                                Label("Edit", systemImage: "pencil")
+                            }
+                            Button {
+                                Task { await vm.setToday(loadout) }
+                            } label: {
+                                Label("Use Today", systemImage: "checkmark.circle")
+                            }
+                            Button(role: .destructive) {
+                                Task { await vm.deleteLoadout(loadout) }
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                        } label: {
+                            Image(systemName: "ellipsis")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundStyle(Color.dpInk3)
+                                .frame(width: 28, height: 28)
+                                .background(Circle().fill(Color.dpSurfaceAlt))
+                        }
+                        .menuStyle(.borderlessButton)
+                        .menuOrder(.fixed)
+                        .padding(10)
+                        .accessibilityLabel("Loadout actions")
+                    }
+                    .padding(.horizontal, DPSpacing.lg)
+                }
             }
+            .padding(.bottom, 116)
         }
-        .listStyle(.plain)
-        .scrollContentBackground(.hidden)
     }
 
-    private func loadoutRow(_ loadout: Loadout, vm: LoadoutsViewModel) -> some View {
-        ZStack(alignment: .topTrailing) {
-            LoadoutCard(
-                loadout: loadout,
-                itemCount: vm.itemCount(for: loadout),
-                isActive: loadout.id == vm.todaysID,
-                onTap: { Task { await vm.setToday(loadout) } }
-            )
-
-            Menu {
-                Button {
-                    editingLoadout = loadout
-                } label: {
-                    Label("Edit", systemImage: "pencil")
-                }
-                Button {
-                    Task { await vm.setToday(loadout) }
-                } label: {
-                    Label("Use Today", systemImage: "checkmark.circle")
-                }
-                Button(role: .destructive) {
-                    Task { await vm.deleteLoadout(loadout) }
-                } label: {
-                    Label("Delete", systemImage: "trash")
-                }
-            } label: {
-                Image(systemName: "ellipsis")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(Color.dpInk2)
-                    .frame(width: 30, height: 30)
-                    .background(RoundedRectangle(cornerRadius: DPRadius.md, style: .continuous).fill(Color.dpSurfaceAlt))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: DPRadius.md, style: .continuous)
-                            .stroke(Color.dpDivider, lineWidth: 1)
-                    )
+    private func filteredLoadouts(_ vm: LoadoutsViewModel) -> [Loadout] {
+        vm.filtered.filter { loadout in
+            switch selectedFilter {
+            case "Daily":
+                return !loadout.isTemporary && loadout.schedule != "Manual"
+            case "Sports":
+                return loadout.name.localizedCaseInsensitiveContains("gym")
+                    || loadout.name.localizedCaseInsensitiveContains("sport")
+                    || loadout.name.localizedCaseInsensitiveContains("run")
+            case "Travel":
+                return loadout.name.localizedCaseInsensitiveContains("trip")
+                    || loadout.name.localizedCaseInsensitiveContains("travel")
+                    || loadout.name.localizedCaseInsensitiveContains("weekend")
+            case "Conditional":
+                return loadout.isTemporary
+                    || loadout.name.localizedCaseInsensitiveContains("rain")
+                    || loadout.name.localizedCaseInsensitiveContains("conditional")
+            default:
+                return true
             }
-            .menuStyle(.borderlessButton)
-            .menuOrder(.fixed)
-            .padding(10)
-            .accessibilityLabel("Loadout actions")
         }
+    }
+
+    private func filterChip(_ title: String, isSelected: Bool = false) -> some View {
+        Button {
+            selectedFilter = title
+        } label: {
+            Text(title)
+                .font(.system(size: 13, weight: .bold))
+                .foregroundStyle(isSelected ? Color.dpBg : Color.dpInk2)
+                .padding(.horizontal, 14)
+                .frame(height: 34)
+                .background(
+                    Capsule()
+                        .fill(isSelected ? Color.dpInk : .clear)
+                )
+                .overlay(
+                    Capsule()
+                        .stroke(isSelected ? Color.dpInk : Color.dpDivider, lineWidth: 1)
+                )
+        }
+        .buttonStyle(.plain)
     }
 }
+
+// MARK: – Shared Packs Gallery
 
 private struct SharedPackTemplate: Identifiable {
     let id = UUID()
@@ -214,9 +227,7 @@ private struct SharedPacksGalleryView: View {
 
     private let templates: [SharedPackTemplate] = [
         SharedPackTemplate(
-            name: "Minimal Work Pack",
-            symbol: "briefcase.fill",
-            tint: .orange,
+            name: "Minimal Work Pack", symbol: "briefcase.fill", tint: .orange,
             summary: "Lean office carry for laptop days.",
             items: [
                 Item(name: "Laptop", symbol: "laptopcomputer", tint: .purple, priority: .high, tag: "Always"),
@@ -227,9 +238,7 @@ private struct SharedPacksGalleryView: View {
             ]
         ),
         SharedPackTemplate(
-            name: "Gym Pack",
-            symbol: "dumbbell.fill",
-            tint: .purple,
+            name: "Gym Pack", symbol: "dumbbell.fill", tint: .purple,
             summary: "After-work gym essentials.",
             items: [
                 Item(name: "Gym Shoes", symbol: "shoeprints.fill", tint: .green, priority: .high, tag: "Always"),
@@ -240,9 +249,7 @@ private struct SharedPacksGalleryView: View {
             ]
         ),
         SharedPackTemplate(
-            name: "Student Daily",
-            symbol: "book.closed.fill",
-            tint: .green,
+            name: "Student Daily", symbol: "book.closed.fill", tint: .green,
             summary: "Class day basics without overpacking.",
             items: [
                 Item(name: "Notebook", symbol: "book.closed.fill", tint: .green, priority: .high, tag: "Always"),
@@ -253,9 +260,7 @@ private struct SharedPacksGalleryView: View {
             ]
         ),
         SharedPackTemplate(
-            name: "Bangkok Rainy Season",
-            symbol: "cloud.rain.fill",
-            tint: .blue,
+            name: "Bangkok Rainy Season", symbol: "cloud.rain.fill", tint: .blue,
             summary: "Fast add-on for wet commutes.",
             items: [
                 Item(name: "Umbrella", symbol: "umbrella.fill", tint: .blue, priority: .high, tag: "Always"),
@@ -265,9 +270,7 @@ private struct SharedPacksGalleryView: View {
             ]
         ),
         SharedPackTemplate(
-            name: "Creator Bag",
-            symbol: "camera.fill",
-            tint: .teal,
+            name: "Creator Bag", symbol: "camera.fill", tint: .teal,
             summary: "Small shoot kit for cafe or street days.",
             items: [
                 Item(name: "Camera", symbol: "camera.fill", tint: .teal, priority: .high, tag: "Always"),
@@ -281,36 +284,34 @@ private struct SharedPacksGalleryView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: DPSpacing.md) {
+                VStack(spacing: DPSpacing.md) {
                     ForEach(templates) { template in
-                        Button {
-                            onImport(template)
-                        } label: {
+                        Button { onImport(template) } label: {
                             DPCard {
                                 HStack(spacing: DPSpacing.md) {
-                                    IconTile(symbol: template.symbol, tint: template.tint, size: .md)
+                                    IconTile(symbol: template.symbol, tint: template.tint, size: .lg)
                                     VStack(alignment: .leading, spacing: 4) {
                                         Text(template.name)
-                                            .font(.system(size: 16, weight: .bold))
+                                            .font(.system(size: 16, weight: .semibold))
                                             .foregroundStyle(Color.dpInk)
                                         Text(template.summary)
-                                            .font(.system(size: 13, weight: .semibold))
+                                            .font(.system(size: 13, weight: .regular))
                                             .foregroundStyle(Color.dpInk3)
                                         Text("\(template.items.count) items")
-                                            .font(.system(size: 12, weight: .bold))
-                                            .foregroundStyle(Color.dpOrange)
+                                            .font(.system(size: 12, weight: .semibold))
+                                            .foregroundStyle(Color.dpInk2)
                                     }
                                     Spacer()
                                     Image(systemName: "plus.circle.fill")
-                                        .font(.system(size: 22, weight: .bold))
-                                        .foregroundStyle(Color.dpOrange)
+                                        .font(.system(size: 20))
+                                        .foregroundStyle(Color.dpInk)
                                 }
                             }
                         }
                         .buttonStyle(.plain)
                     }
                 }
-                .padding(DPSpacing.lg)
+                .padding(DPSpacing.base)
             }
             .background(Color.dpBg)
             .navigationTitle("Shared Packs")

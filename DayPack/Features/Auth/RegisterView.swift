@@ -30,20 +30,24 @@ struct RegisterView: View {
         VStack(spacing: 0) {
             backChevron
                 .padding(.horizontal, 22)
-                .padding(.top, 8)
+                .padding(.top, 18)
 
             ScrollView {
                 VStack(spacing: DPSpacing.lg) {
-                    IconTile(symbol: "backpack.fill", tint: .orange, size: .lg)
-                        .padding(.top, DPSpacing.lg)
-
-                    VStack(spacing: 6) {
-                        Text("Create your account").dpTitle1()
-                            .multilineTextAlignment(.center)
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Get set up · ~30s")
+                            .dpEyebrow()
+                        Text("Create your\naccount.")
+                            .font(.system(size: 48, weight: .bold, design: .serif))
+                            .italic()
+                            .lineSpacing(-4)
+                            .foregroundStyle(Color.dpInk)
                         Text("Start packing with confidence.")
-                            .font(.system(size: 16))
-                            .foregroundStyle(Color.dpInk3)
+                            .font(.system(size: 14.5, weight: .medium))
+                            .foregroundStyle(Color.dpInk2)
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.top, DPSpacing.xl)
 
                     VStack(spacing: DPSpacing.md) {
                         CustomTextField(
@@ -104,7 +108,8 @@ struct RegisterView: View {
                         Button(action: onSwitchToLogin) {
                             Text("Log in")
                                 .font(.system(size: 14, weight: .semibold))
-                                .foregroundStyle(Color.dpOrange)
+                                .foregroundStyle(Color.dpInk)
+                                .underline()
                         }
                         .buttonStyle(.plain)
                     }

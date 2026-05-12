@@ -7,43 +7,67 @@ struct PerfectDepartureView: View {
     var body: some View {
         VStack(spacing: DPSpacing.xl) {
             Spacer()
-            ZStack {
-                ForEach(0..<12, id: \.self) { index in
-                    Capsule()
-                        .fill(index.isMultiple(of: 2) ? Color.dpOrange : Color.dpGreen)
-                        .frame(width: 8, height: 24)
-                        .offset(y: -86)
-                        .rotationEffect(.degrees(Double(index) * 30))
-                }
-                Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 92, weight: .bold))
-                    .foregroundStyle(Color.dpGreen)
-            }
 
-            VStack(spacing: DPSpacing.sm) {
-                Text("Perfect Departure").dpTitle1()
-                Text("\(packedCount) items packed. You are ready to go.")
-                    .font(.system(size: 16))
-                    .foregroundStyle(Color.dpInk3)
-                    .multilineTextAlignment(.center)
+            VStack(alignment: .leading, spacing: DPSpacing.lg) {
+                Text("Perfect departure")
+                    .font(.system(size: 11, weight: .bold))
+                    .textCase(.uppercase)
+                    .foregroundStyle(Color.dpInk4)
+                Text("You're\ngood to go.")
+                    .font(.system(size: 62, weight: .bold, design: .serif))
+                    .italic()
+                    .lineSpacing(-8)
+                    .foregroundStyle(Color.dpBg)
+                Text("\(packedCount) items packed. Nothing is standing between you and the door.")
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundStyle(Color.dpInk4)
+                    .multilineTextAlignment(.leading)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
 
-            DPCard {
-                HStack {
-                    Image(systemName: "flame.fill").foregroundStyle(Color.dpOrange)
-                    Text("Streak updated after this check appears in history.")
-                        .font(.system(size: 14, weight: .semibold))
-                    Spacer()
+            HStack(spacing: DPSpacing.md) {
+                Image(systemName: "checkmark")
+                    .font(.system(size: 20, weight: .black))
+                    .foregroundStyle(Color.dpInk)
+                    .frame(width: 56, height: 56)
+                    .background(Circle().fill(Color.dpOrange))
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Packed and checked")
+                        .font(.system(size: 17, weight: .black))
+                        .foregroundStyle(Color.dpBg)
+                    Text("\(packedCount) items are ready for today.")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(Color.dpInk4)
                 }
+
+                Spacer(minLength: 0)
             }
+            .padding(20)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: DPRadius.xxl, style: .continuous)
+                    .fill(Color.dpBg.opacity(0.06))
+            )
 
             Spacer()
-
-            PrimaryButton(title: "Done", icon: "checkmark", action: onDone)
+            Button(action: onDone) {
+                HStack {
+                    Text("Back to Today")
+                        .font(.system(size: 16, weight: .black))
+                    Image(systemName: "arrow.right")
+                        .font(.system(size: 14, weight: .black))
+                }
+                .foregroundStyle(Color.dpInk)
+                .frame(maxWidth: .infinity)
+                .frame(height: 54)
+                .background(Capsule().fill(Color.dpOrange))
+            }
+            .buttonStyle(PressableButtonStyle())
         }
         .padding(.horizontal, 28)
         .padding(.vertical, 30)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.dpBg.ignoresSafeArea())
+        .background(Color.dpInk.ignoresSafeArea())
     }
 }

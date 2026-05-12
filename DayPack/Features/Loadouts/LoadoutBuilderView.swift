@@ -310,7 +310,7 @@ struct LoadoutBuilderView: View {
         HStack(spacing: DPSpacing.md) {
             Image(systemName: symbol)
                 .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(Color.dpOrange)
+                .foregroundStyle(Color.dpInk)
                 .frame(width: 30, height: 30)
                 .background(Circle().fill(Color.dpOrangeSoft))
             VStack(alignment: .leading, spacing: 2) {
